@@ -12,11 +12,11 @@ title: Teams
     <tr>
       <th>Team</th>
       <th>Captain</th>
-      <th>Entries</th>
-      <th>Completed</th>
-      <th>First</th>
-      <th>Last</th>
-      <th class="hide-mobile">Total raised</th>
+      <th data-sort="number">Entries</th>
+      <th data-sort="number">Completed</th>
+      <th data-sort="number">First</th>
+      <th data-sort="number">Last</th>
+      <th class="hide-mobile" data-sort="number">Total raised</th>
     </tr>
   </thead>
   <tbody>
@@ -31,7 +31,7 @@ title: Teams
       <td>{{ team.completed_count }}</td>
       <td class="small">{{ team.first_charge or '—' }}</td>
       <td class="small">{{ team.last_charge or '—' }}</td>
-      <td class="distance hide-mobile">{{ team.raised_dollars | dollars }}</td>
+      <td class="distance hide-mobile" data-sort-value="{{ team.raised_dollars }}">{{ team.raised_dollars | dollars }}</td>
     </tr>
     {% endfor %}
   </tbody>

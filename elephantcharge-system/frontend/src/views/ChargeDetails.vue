@@ -7,6 +7,7 @@
   import ChargeEntries from './ChargeEntries.vue'
   import ChargeCheckpoints from './ChargeCheckpoints.vue'
   import ChargeLegs from './ChargeLegs.vue'
+  import ChargeGrants from './ChargeGrants.vue'
   
   const axiosPlain = inject('axiosPlain')
   const route = useRoute()
@@ -90,5 +91,6 @@
     <ChargeEntries v-if="state.charge" :charge="state.charge" />
     <ChargeCheckpoints v-if="state.charge" :charge="state.charge" />
     <ChargeLegs v-if="state.charge" :charge="state.charge" />
+    <ChargeGrants v-if="state.charge" :charge="state.charge" />
   </v-container>
 </template>

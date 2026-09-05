@@ -26,34 +26,70 @@ layout: base.njk
 </section>
 
 <section>
-  <h2>Awards</h2>
-  <div>
-    {% for aw in charge.award_winners %}
-    <div class="award-winner">
-      <div class="award-ordinal">{{ aw.ordinal }}</div>
-      <div>
-        <div class="award-name">{{ aw.name }}</div>
-        <div class="award-winner-name">
-          {% if aw.winner %}
-            🏆 Car {{ aw.winner.car_no }} — {{ aw.winner.entry_name }}
-            {% if aw.type_ref == 'DISTANCE' and aw.winner.value != null %}
-              ({{ aw.winner.value | km }})
-            {% elif aw.type_ref == 'PLEDGE' and aw.winner.value != null %}
-              ({{ aw.winner.value | dollars }})
-            {% endif %}
-          {% else %}
-            <span class="muted">No eligible entry</span>
-          {% endif %}
-        </div>
-        {% if aw.class_name or aw.category %}
-        <div class="small muted">
-          {% if aw.class_name %}{{ aw.class_name }}{% endif %}
-          {% if aw.class_name and aw.category %} · {% endif %}
-          {% if aw.category %}{{ aw.category }}{% endif %}
-        </div>
-        {% endif %}
-      </div>
+  {% for aw in charge.award_winners %}
+  <div class="award-block">
+    <div class="award-block-title">
+      <span class="award-ordinal">{{ aw.ordinal }}</span>
+      <span class="award-name">{{ aw.name }}</span>
     </div>
-    {% endfor %}
+    {% if aw.class_name or aw.category %}
+    <p class="small muted award-block-scope">
+      {% if aw.class_name %}{{ aw.class_name }}{% endif %}
+      {% if aw.class_name and aw.category %} · {% endif %}
+      {% if aw.category %}{{ aw.category }}{% endif %}
+    </p>
+    {% endif %}
+
+    {% if aw.results.length %}
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Car</th>
+          <th>Entry</th>
+          <th class="hide-mobile">Class</th>
+          <th class="hide-mobile">Categories</th>
+          {% if aw.type_ref == 'DISTANCE' %}
+          <th class="distance">Distance</th>
+          {% else %}
+          <th class="distance">Raised</th>
+          {% endif %}
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in aw.results %}
+        <tr class="{% if loop.first %}award-winner-row{% endif %}">
+          <td>{{ loop.index }}</td>
+          <td class="car-no">{{ r.car_no }}</td>
+          <td>
+            {% if loop.first %}🏆 {% endif %}<a href="/entry/{{ r.entry_id }}/">{{ r.entry_name }}</a>
+          </td>
+          <td class="small hide-mobile">{{ r.class_name or '—' }}</td>
+          <td class="small hide-mobile muted">{{ r.categories or '—' }}</td>
+          {% if aw.type_ref == 'DISTANCE' %}
+          <td class="distance">{{ r.value | km }}</td>
+          {% else %}
+          <td class="distance">{{ r.value | dollars }}</td>
+          {% endif %}
+          <td class="small no-wrap">
+            {% if r.result_status == 'COMPLETE' %}
+            <span class="result-complete">✓ Complete</span>
+            {% elif r.result_status %}
+            <span class="result-dnf">{{ r.result_status }}</span>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="small muted">No eligible entries.</p>
+    {% endif %}
   </div>
+  {% endfor %}
 </section>

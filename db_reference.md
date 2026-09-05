@@ -45,6 +45,7 @@ PostgreSQL 14 on localhost:5432, user=postgres, db=charge23. Owner: elephant_cha
 | View | Purpose |
 |---|---|
 | v_award | Awards joined with class, category, sponsor |
+| v_beneficiary | Beneficiaries with grant count, total kwacha granted |
 | v_car | Cars with make, entry count, team count, last charge |
 | v_charge | Charges with checkpoint count, entry counts, fundraising totals |
 | v_checkin | Checkins joined with checkpoint + sponsor name |
@@ -55,6 +56,7 @@ PostgreSQL 14 on localhost:5432, user=postgres, db=charge23. Owner: elephant_cha
 | v_entry_distance | entry_distance joined with distance names and charge_id |
 | v_entry_leg | entry_leg with leg, checkpoint, sponsor names, speed, ranking |
 | v_gps_raw | gps_raw with GeoJSON x/y projected coords (no raw geometry blob) |
+| v_grant | Grants joined with beneficiary name/short_name |
 | v_leg | Legs with checkpoint/sponsor names, entry count, GeoJSON locations |
 | v_pledgeawardresults | Pledge award eligibility results (all entries ranked by sponsorship) |
 | v_sponsor | Sponsors with checkpoint count, charge count |
@@ -74,7 +76,7 @@ PostgreSQL 14 on localhost:5432, user=postgres, db=charge23. Owner: elephant_cha
 
 | Column | Notes |
 |---|---|
-| charge_id … kml | All base charge columns; map_center as GeoJSON string |
+| charge_id … kml, publish | All base charge columns; map_center as GeoJSON string |
 | charge_complete | `true` when charge_date ≤ today |
 | checkpoint_count | Number of checkpoints for this charge |
 | entry_count | Total entries |
@@ -84,6 +86,8 @@ PostgreSQL 14 on localhost:5432, user=postgres, db=charge23. Owner: elephant_cha
 | raised_dollars | raised_local / exchange_rate |
 | dollars_per_entry | raised_dollars / entry_count |
 | new_teams_count | Entries with category NEW |
+
+`publish` (boolean, default false) gates whether `elephantcharge-results`' `scripts/extract.js` includes this charge (and everything under it — entries, checkpoints, legs, grants, GPS tracks) in the public results site build. Edited via the "Published" switch on `ChargeForm.vue`.
 
 **Sample rows (selected):**
 
@@ -115,6 +119,20 @@ Joins `award` with `class`, `category`, and `sponsor`. Used to display the award
 All 11 awards, none have a named sponsor in current data (sponsor_id is null for all). See award table for full data.
 
 > **Query workaround** (postgres user): Run the JOIN directly — `SELECT a.*, cl.class_ref, cat.category_ref, sp.sponsor_name FROM award a LEFT JOIN class cl ... LEFT JOIN category cat ... LEFT JOIN sponsor sp ...`
+
+---
+
+### v_beneficiary
+
+Used by `elephantcharge-system`'s `BeneficiaryController` for the admin Beneficiaries screen. Aliases the table's `id` column to `beneficiary_id` for consistency with the other `<entity>_id`-style views (e.g. `v_sponsor.sponsor_id`).
+
+| Column | Notes |
+|---|---|
+| beneficiary_id … grant_description_default | All `beneficiaries` columns (id aliased to beneficiary_id) |
+| grant_count | Number of rows in `grant` for this beneficiary |
+| total_kwacha | Sum of `grant.grant_kwacha` for this beneficiary (0 if none) |
+
+`logo_file_name` values point to files in `elephantcharge-system/backend/public/beneficiaries/logos/`, named `<beneficiary_id>_<original-filename>` (e.g. `1_clz.jpg`) and served via the backend's `express.static('public')`. Only 17 of 26 beneficiaries currently have a real logo file on disk — the rest have a stale/empty `logo_file_name` until someone uploads one via the admin UI.
 
 ---
 
@@ -384,6 +402,18 @@ Replaces the raw PostGIS geometry columns with GeoJSON and x/y coordinate floats
 | y | ST_Y(location_prj) — northing in metres |
 
 The raw geography column (`location` in gps_raw, WGS84) and the original `location_prj` geometry are not exposed — only the projected GeoJSON and x/y scalars. Coordinates are EPSG:3857 (Web Mercator), not WGS84 lat/lon.
+
+---
+
+### v_grant
+
+Used by `elephantcharge-system`'s `GrantController` for the Grants table on `ChargeDetails.vue`.
+
+| Column | Notes |
+|---|---|
+| grant_id, charge_id, beneficiary_id, grant_kwacha, description | from grant (same) |
+| beneficiary_name, beneficiary_short_name | from beneficiaries (JOIN on beneficiary_id) |
+| grant_dollars | grant_kwacha / charge.exchange_rate (JOIN on charge_id) |
 
 ---
 
@@ -712,7 +742,7 @@ Award winner = entry with shortest `distance_m` (for DISTANCE type) or highest `
 
 ### beneficiaries (26 rows)
 
-Conservation NGOs that receive grants. Key fields: id, name, short_name, geography (region code), website, description.
+Conservation NGOs that receive grants. Key fields: id, name, short_name, geography (region code), website, description, logo_file_name (see [v_beneficiary](#v_beneficiary)). Managed via `elephantcharge-system`'s Beneficiaries admin screen (`BeneficiaryController`).
 
 Sample: Conservation Lower Zambezi (clz), WECSZ (wecsz), Game Rangers International (gri), Children in the Wilderness (citw), Zambian Carnivore Programme (zcp).
 

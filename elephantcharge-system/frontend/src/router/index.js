@@ -36,6 +36,10 @@ const routes = [
         name: 'Sponsors',
         component: () => import(/* webpackChunkName: "charges" */ '@/views/SponsorsList.vue'),
       }, {
+        path: '/beneficiaries',
+        name: 'Beneficiaries',
+        component: () => import(/* webpackChunkName: "charges" */ '@/views/BeneficiariesList.vue'),
+      }, {
         path: '/trackers',
         name: 'TrackerList',
         component: () => import(/* webpackChunkName: "charges" */ '@/views/TrackerList.vue'),

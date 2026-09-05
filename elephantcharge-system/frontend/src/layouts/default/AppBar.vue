@@ -24,10 +24,11 @@
           density="compact"
           nav
         >
-          <v-list-item prepend-icon="mdi-view-dashboard" to="/">Charges</v-list-item>
-          <v-list-item prepend-icon="mdi-view-dashboard" to="/teams">Teams</v-list-item>
-          <v-list-item prepend-icon="mdi-view-dashboard" to="/cars">Cars</v-list-item>
-          <v-list-item prepend-icon="mdi-view-dashboard" to="/sponsors">Sponsors</v-list-item>
+          <v-list-item prepend-icon="mdi-flag-checkered" to="/">Charges</v-list-item>
+          <v-list-item prepend-icon="mdi-account-group" to="/teams">Teams</v-list-item>
+          <v-list-item prepend-icon="mdi-car-estate" to="/cars">Cars</v-list-item>
+          <v-list-item prepend-icon="mdi-handshake" to="/sponsors">Sponsors</v-list-item>
+          <v-list-item prepend-icon="mdi-hand-heart" to="/beneficiaries">Beneficiaries</v-list-item>
         </v-list>
   </v-navigation-drawer>
 </template>

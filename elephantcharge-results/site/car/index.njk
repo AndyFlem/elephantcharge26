@@ -44,8 +44,9 @@ layout: base.njk
         <th>Entry</th>
         <th>Team</th>
         <th>Status</th>
-        <th>Net dist.</th>
-        <th class="hide-mobile">Raised</th>
+        <th class="distance">Net Distance Position</th>
+        <th class="distance">Shortest Distance Position</th>
+        <th class="distance hide-mobile">Raised</th>
       </tr>
     </thead>
     <tbody>
@@ -66,7 +67,10 @@ layout: base.njk
           {% else %}—{% endif %}
         </td>
         <td class="distance">
-          {% if entry.distance_net != null %}{{ entry.distance_net | km }}{% else %}—{% endif %}
+          {% if entry.net_distance_position != null %}{{ entry.net_distance_position }}{% else %}—{% endif %}
+        </td>
+        <td class="distance">
+          {% if entry.class_distance_position != null %}{{ entry.class_distance_position }} / {{ entry.class_distance_total }}{% else %}—{% endif %}
         </td>
         <td class="distance hide-mobile">{{ entry.raised_dollars | dollars }}</td>
       </tr>

@@ -1325,6 +1325,34 @@ CREATE VIEW public.v_award AS
 ALTER TABLE public.v_award OWNER TO elephant_charge;
 
 --
+-- Name: v_beneficiary; Type: VIEW; Schema: public; Owner: elephant_charge
+--
+
+CREATE VIEW public.v_beneficiary AS
+ SELECT b.id AS beneficiary_id,
+    b.name,
+    b.short_name,
+    b.geography,
+    b.geography_description,
+    b.description,
+    b.logo_file_name,
+    b.website,
+    b.facebook,
+    b.email_admin,
+    b.email_public,
+    b.grant_description_default,
+    ( SELECT count(*) AS count
+           FROM public."grant" g
+          WHERE (g.beneficiary_id = b.id)) AS grant_count,
+    ( SELECT COALESCE(sum(g.grant_kwacha), (0)::bigint) AS sum
+           FROM public."grant" g
+          WHERE (g.beneficiary_id = b.id)) AS total_kwacha
+   FROM public.beneficiaries b;
+
+
+ALTER TABLE public.v_beneficiary OWNER TO elephant_charge;
+
+--
 -- Name: v_car; Type: VIEW; Schema: public; Owner: elephant_charge
 --
 
@@ -1689,6 +1717,26 @@ CREATE VIEW public.v_gps_raw AS
 
 
 ALTER TABLE public.v_gps_raw OWNER TO elephant_charge;
+
+--
+-- Name: v_grant; Type: VIEW; Schema: public; Owner: elephant_charge
+--
+
+CREATE VIEW public.v_grant AS
+ SELECT g.grant_id,
+    g.charge_id,
+    g.beneficiary_id,
+    g.grant_kwacha,
+    g.description,
+    b.name AS beneficiary_name,
+    b.short_name AS beneficiary_short_name,
+    ((g.grant_kwacha)::double precision / c.exchange_rate) AS grant_dollars
+   FROM ((public."grant" g
+     JOIN public.beneficiaries b ON ((b.id = g.beneficiary_id)))
+     JOIN public.charge c ON ((c.charge_id = g.charge_id)));
+
+
+ALTER TABLE public.v_grant OWNER TO elephant_charge;
 
 --
 -- Name: v_leg; Type: VIEW; Schema: public; Owner: elephant_charge

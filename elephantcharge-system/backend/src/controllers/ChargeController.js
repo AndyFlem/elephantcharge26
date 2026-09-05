@@ -286,7 +286,7 @@ module.exports = {
   create (req, res) {
     Common.debug(req, 'create')
 
-    const oInsert = {map_scale:12, charge_name: req.body.charge_name, charge_ref: req.body.charge_ref, location: req.body.location, charge_date: req.body.charge_date, start_time: req.body.start_time, end_time: req.body.end_time, m_per_local: req.body.m_per_local, exchange_rate: req.body.exchange_rate, gauntlet_multiplier: req.body.gauntlet_multiplier}
+    const oInsert = {map_scale:12, charge_name: req.body.charge_name, charge_ref: req.body.charge_ref, location: req.body.location, charge_date: req.body.charge_date, start_time: req.body.start_time, end_time: req.body.end_time, m_per_local: req.body.m_per_local, exchange_rate: req.body.exchange_rate, gauntlet_multiplier: req.body.gauntlet_multiplier, publish: req.body.publish}
 
     Knex('charge')
       .insert(oInsert)      
@@ -300,7 +300,7 @@ module.exports = {
   update (req, res) {
     Common.debug(req, 'update')
 
-    const oUpdate = {charge_name: req.body.charge_name, charge_ref: req.body.charge_ref, location: req.body.location, charge_date: req.body.charge_date, start_time: req.body.start_time, end_time: req.body.end_time, m_per_local: req.body.m_per_local, exchange_rate: req.body.exchange_rate, gauntlet_multiplier: req.body.gauntlet_multiplier}
+    const oUpdate = {charge_name: req.body.charge_name, charge_ref: req.body.charge_ref, location: req.body.location, charge_date: req.body.charge_date, start_time: req.body.start_time, end_time: req.body.end_time, m_per_local: req.body.m_per_local, exchange_rate: req.body.exchange_rate, gauntlet_multiplier: req.body.gauntlet_multiplier, publish: req.body.publish}
 
     Knex('charge')
       .update(oUpdate)      

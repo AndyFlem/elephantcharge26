@@ -22,7 +22,8 @@
     gauntlet_multiplier:3,
     exchange_rate:25,
     map_scale:12,
-    location:'Unknown location'
+    location:'Unknown location',
+    publish:false
   }
   const state = reactive({    
     charge: {...blankCharge},
@@ -180,7 +181,16 @@
                 placeholder="0.5"
                 variant="outlined"
               ></v-text-field>
-            </v-col>                        
+            </v-col>
+            <v-col cols="12"  class="pt-1 pb-1">
+              <v-switch
+                label="Published (visible on the public results site)"
+                density="compact"
+                v-model="state.charge.publish"
+                color="primary"
+                hide-details
+              ></v-switch>
+            </v-col>
           </v-row>
         </v-form>
       </v-card-text>

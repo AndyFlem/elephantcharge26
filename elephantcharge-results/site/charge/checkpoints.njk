@@ -26,15 +26,12 @@ layout: base.njk
 </section>
 
 <section>
-  <h2>Checkpoints</h2>
   <div style="overflow-x:auto">
   <table>
     <thead>
       <tr>
         <th>Sponsor</th>
         <th>Type</th>
-        <th>Radius</th>
-        <th>Elevation</th>
         <th>Check-ins</th>
         <th class="hide-mobile">Starters</th>
       </tr>
@@ -50,8 +47,6 @@ layout: base.njk
           Standard
           {% endif %}
         </td>
-        <td>{{ cp.radius_m }} m</td>
-        <td>{% if cp.elevation %}{{ cp.elevation }} m{% else %}—{% endif %}</td>
         <td>{{ cp.checkins_count }}</td>
         <td class="hide-mobile">{{ cp.starters_count }}</td>
       </tr>
@@ -71,9 +66,9 @@ layout: base.njk
       <tr>
         <th>From</th>
         <th>To</th>
-        <th>Distance</th>
+        <th class="distance" data-sort="number">Distance</th>
         <th>Type</th>
-        <th>Entries</th>
+        <th data-sort="number">Entries</th>
       </tr>
     </thead>
     <tbody>
@@ -81,7 +76,7 @@ layout: base.njk
       <tr>
         <td class="small">{{ leg.checkpoint1_name }}</td>
         <td class="small">{{ leg.checkpoint2_name }}</td>
-        <td class="distance">{{ leg.distance_m | km }}</td>
+        <td class="distance" data-sort-value="{{ leg.distance_m }}">{{ leg.distance_m | km }}</td>
         <td class="small">
           {% if leg.is_gauntlet %}<mark>Gauntlet</mark>{% endif %}
           {% if leg.is_tsetse %}<ins>Tsetse</ins>{% endif %}

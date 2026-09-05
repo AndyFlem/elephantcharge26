@@ -82,7 +82,7 @@ function compareNullsFirstDesc(a, b) {
 function computeAwardWinners(awards, chargeId, distanceAwardRows, pledgeAwardRows) {
   return awards.map((award) => {
     const rows = award.type_ref === 'DISTANCE' ? distanceAwardRows : pledgeAwardRows;
-    const results = rows
+    const sorted = rows
       .filter((r) => r.award_id === award.award_id && r.charge_id === chargeId)
       .slice()
       .sort((a, b) => {
@@ -93,8 +93,18 @@ function computeAwardWinners(awards, chargeId, distanceAwardRows, pledgeAwardRow
         return award.type_ref === 'DISTANCE'
           ? compareNullsLastAsc(a.distance_m, b.distance_m)
           : compareNullsFirstDesc(a.raised_dollars, b.raised_dollars);
-      });
-    const winner = results[0] || null;
+      })
+      .map((r) => ({
+        entry_id: r.entry_id,
+        car_no: r.car_no,
+        entry_name: r.entry_name,
+        class_name: r.class_name,
+        categories: r.categories || null,
+        result_status: r.result_status || null,
+        leg_count: r.leg_count != null ? Number(r.leg_count) : null,
+        value: Number(award.type_ref === 'DISTANCE' ? r.distance_m : r.raised_dollars),
+      }));
+    const winner = sorted[0] || null;
 
     return {
       award_id: Number(award.award_id),
@@ -104,15 +114,8 @@ function computeAwardWinners(awards, chargeId, distanceAwardRows, pledgeAwardRow
       class_name: award.class_name || null,
       category: award.category || null,
       ordinal: Number(award.ordinal),
-      winner: winner
-        ? {
-            entry_id: winner.entry_id,
-            car_no: winner.car_no,
-            entry_name: winner.entry_name,
-            result_status: winner.result_status,
-            value: Number(award.type_ref === 'DISTANCE' ? winner.distance_m : winner.raised_dollars),
-          }
-        : null,
+      winner,
+      results: sorted,
     };
   });
 }
@@ -125,7 +128,8 @@ async function main() {
 
   console.log('Querying database...');
 
-  // ── Charges ────────────────────────────────────────────────────────────────
+  // ── Charges (published only — publish=false charges are excluded from the
+  //    public results site entirely, including every per-charge list below) ──
   const chargeRows = await query(`
     SELECT charge_id, charge_ref, charge_name, location, charge_date,
       start_time, end_time, gauntlet_multiplier, exchange_rate,
@@ -135,11 +139,14 @@ async function main() {
       entry_completed_pct, raised_local, raised_dollars, dollars_per_entry,
       new_teams_count, map_center
     FROM v_charge
+    WHERE publish
     ORDER BY charge_date DESC
   `);
+  const publishedChargeIds = new Set(chargeRows.map((c) => c.charge_id));
+  const isPublished = (row) => publishedChargeIds.has(row.charge_id);
 
   // ── Entries (all charges) ──────────────────────────────────────────────────
-  const entryRows = await query(`
+  const entryRows = (await query(`
     SELECT
       ve.entry_id, ve.charge_id, ve.car_no, ve.entry_name, ve.captain, ve.members,
       ve.class_id, ve.class_name, ve.result_status,
@@ -154,40 +161,40 @@ async function main() {
     FROM v_entry ve
     JOIN team t ON ve.team_id = t.team_id
     ORDER BY ve.charge_id, ve.distance_net NULLS LAST
-  `);
+  `)).filter(isPublished);
 
   // ── Entry distances (all) ──────────────────────────────────────────────────
-  const entryDistanceRows = await query(`
+  const entryDistanceRows = (await query(`
     SELECT ed.entry_id, ed.distance_ref, ed.distance_m, e.charge_id
     FROM entry_distance ed
     JOIN entry e ON ed.entry_id = e.entry_id
-  `);
+  `)).filter(isPublished);
 
   // ── Entry legs (per-entry leg-by-leg breakdown) ────────────────────────────
-  const entryLegRows = await query(`
+  const entryLegRows = (await query(`
     SELECT entry_id, leg_no, checkpoint1_name, checkpoint2_name,
       start_time, end_time, elapsed_s, distance_m, distance_multiple, speed,
       is_gauntlet, is_tsetse, leg_position, leg_entries, charge_id
     FROM v_entry_leg
     ORDER BY charge_id, entry_id, leg_no
-  `);
+  `)).filter(isPublished);
 
   // ── Checkpoints ────────────────────────────────────────────────────────────
-  const checkpointRows = await query(`
+  const checkpointRows = (await query(`
     SELECT checkpoint_id, is_gauntlet, charge_id, radius_m, elevation,
       sponsor_name, short_name, starters_count, checkins_count, located,
       location
     FROM v_checkpoint
     ORDER BY charge_id, checkpoint_id
-  `);
+  `)).filter(isPublished);
 
   // ── Legs ───────────────────────────────────────────────────────────────────
-  const legRows = await query(`
+  const legRows = (await query(`
     SELECT leg_id, charge_id, checkpoint1_id, checkpoint2_id, distance_m,
       is_gauntlet, is_tsetse, checkpoint1_name, checkpoint2_name, entry_count
     FROM v_leg
     ORDER BY charge_id, leg_id
-  `);
+  `)).filter(isPublished);
 
   // ── Awards ─────────────────────────────────────────────────────────────────
   const awardRows = await query(`
@@ -202,25 +209,45 @@ async function main() {
   `);
 
   // ── Award eligibility/results (class + category matching done by the view) ─
-  const distanceAwardRows = await query(`
-    SELECT award_id, charge_id, entry_id, car_no, entry_name, result_status, leg_count, distance_m
+  const distanceAwardRows = (await query(`
+    SELECT award_id, charge_id, entry_id, car_no, entry_name, result_status, leg_count, distance_m,
+      class_name, categories
     FROM v_distanceawardresults
-  `);
+  `)).filter(isPublished);
 
-  const pledgeAwardRows = await query(`
-    SELECT award_id, charge_id, entry_id, car_no, entry_name, result_status, leg_count, raised_dollars
+  const pledgeAwardRows = (await query(`
+    SELECT award_id, charge_id, entry_id, car_no, entry_name, result_status, leg_count, raised_dollars,
+      class_name, categories
     FROM v_pledgeawardresults
-  `);
+  `)).filter(isPublished);
+
+  // The unrestricted (no class/category) net-distance award — i.e. the
+  // "Net Distance Position" placing, used on the car detail page in
+  // place of a plain Net dist. figure.
+  const overallDistanceAward = awardRows.find(
+    (a) => a.type_ref === 'DISTANCE' && a.distance_ref === 'NET' && !a.class_id && !a.category_id,
+  );
+
+  // The per-class (Car / Bikes), no-category "shortest distance" awards —
+  // Castle Fleming Trophy / Dean Cup — used for the car detail page's
+  // "Shortest Distance Position" column. Keyed by class_id so each entry
+  // is matched against the award for its own class.
+  const classDistanceAwardsByClassId = {};
+  for (const a of awardRows) {
+    if (a.type_ref === 'DISTANCE' && a.distance_ref === 'TOTAL_COMPETITION' && a.class_id && !a.category_id) {
+      classDistanceAwardsByClassId[a.class_id] = a;
+    }
+  }
 
   // ── Grants ─────────────────────────────────────────────────────────────────
-  const grantRows = await query(`
+  const grantRows = (await query(`
     SELECT g.grant_id, g.charge_id, g.grant_kwacha, g.description,
       b.id AS beneficiary_id, b.name AS beneficiary_name, b.short_name,
       b.geography, b.website
     FROM "grant" g
     JOIN beneficiaries b ON g.beneficiary_id = b.id
     ORDER BY g.charge_id, b.name
-  `);
+  `)).filter(isPublished);
 
   // ── Beneficiaries ──────────────────────────────────────────────────────────
   const beneficiaryRows = await query(`
@@ -249,7 +276,7 @@ async function main() {
   `);
 
   // ── GPS tracks (completed legs only, not the full raw/clean track) ─────────
-  const trackRows = await query(`
+  const trackRows = (await query(`
     SELECT
       e.charge_id, vel.entry_id, e.car_no, e.entry_name, e.result_status,
       t.color, t.team_name,
@@ -268,7 +295,7 @@ async function main() {
     LEFT JOIN entry_distance ed_total
       ON ed_total.entry_id = e.entry_id AND ed_total.distance_ref = 'TOTAL_COMPETITION'
     ORDER BY e.charge_id, e.car_no, vel.leg_no
-  `);
+  `)).filter(isPublished);
 
   console.log(
     `  ${chargeRows.length} charges, ${entryRows.length} entries, ` +
@@ -288,6 +315,8 @@ async function main() {
   // ── Build charges.json ────────────────────────────────────────────────────
   console.log('\nBuilding charges.json...');
   const awardsByEntry = {};
+  const netDistancePositionByEntry = {};
+  const classDistancePositionByEntry = {};
   const charges = chargeRows.map((c) => {
     const cid = c.charge_id;
     const entries = (entriesByCharge[cid] || []).map((e) => ({
@@ -358,12 +387,34 @@ async function main() {
       awardsByEntry[aw.winner.entry_id].push({ award_id: aw.award_id, name: aw.name });
     }
 
+    if (overallDistanceAward) {
+      const overall = awardWinners.find((aw) => aw.award_id === Number(overallDistanceAward.award_id));
+      if (overall) {
+        overall.results.forEach((r, i) => {
+          netDistancePositionByEntry[r.entry_id] = i + 1;
+        });
+      }
+    }
+
+    for (const classAward of Object.values(classDistanceAwardsByClassId)) {
+      const aw = awardWinners.find((a) => a.award_id === Number(classAward.award_id));
+      if (!aw) continue;
+      aw.results.forEach((r, i) => {
+        classDistancePositionByEntry[r.entry_id] = { position: i + 1, total: aw.results.length };
+      });
+    }
+
     const mapCenter = parseGeoJson(c.map_center);
     const center = mapCenter
       ? { lat: mapCenter.coordinates[1], lng: mapCenter.coordinates[0] }
       : null;
 
     const hasGpsTracks = (tracksByCharge[cid] || []).length > 0;
+
+    const completedDistances = entries
+      .filter((e) => e.result_status === 'COMPLETE' && e.distance_total_competition != null)
+      .map((e) => e.distance_total_competition);
+    const shortestDistanceM = completedDistances.length ? Math.min(...completedDistances) : null;
 
     return {
       charge_id: cid,
@@ -391,6 +442,7 @@ async function main() {
       new_teams_count: Number(c.new_teams_count),
       map_center: center,
       has_gps_tracks: hasGpsTracks,
+      shortest_distance_m: shortestDistanceM,
       entries,
       checkpoints,
       legs,
@@ -522,9 +574,42 @@ async function main() {
         make: e.make || null,
         model: e.model || null,
         class_name: e.class_name,
+        awards: awardsByEntry[e.entry_id] || [],
+        net_distance_position: netDistancePositionByEntry[e.entry_id] || null,
+        class_distance_position: classDistancePositionByEntry[e.entry_id]?.position || null,
+        class_distance_total: classDistancePositionByEntry[e.entry_id]?.total || null,
       };
     });
     teamEntries.sort((a, b) => new Date(b.charge_date) - new Date(a.charge_date));
+
+    // Recomputed from teamEntries (already restricted to published charges)
+    // rather than trusting v_team's entry_count/raised_dollars/etc, which are
+    // computed across all charges regardless of publish status.
+    const completedEntries = teamEntries.filter((e) => e.result_status === 'COMPLETE');
+    const raisedDollarsTotal = teamEntries.reduce((s, e) => s + (e.raised_dollars || 0), 0);
+    const entriesByDate = teamEntries
+      .filter((e) => e.charge_date)
+      .slice()
+      .sort((a, b) => new Date(a.charge_date) - new Date(b.charge_date));
+
+    // Awards grouped by charge (a team can have multiple entries — e.g.
+    // multiple cars — in the same charge, so awards are pooled per charge),
+    // most recent charge first.
+    const awardsByCharge = groupBy(
+      teamEntries.filter((e) => (e.awards || []).length > 0),
+      'charge_id',
+    );
+    const awardSections = Object.values(awardsByCharge)
+      .map((entries) => ({
+        charge_ref: entries[0].charge_ref,
+        charge_name: entries[0].charge_name,
+        charge_date: entries[0].charge_date,
+        multi_entry: entries.length > 1,
+        awards: entries.flatMap((e) =>
+          e.awards.map((a) => ({ ...a, entry_name: e.entry_name, car_no: e.car_no })),
+        ),
+      }))
+      .sort((a, b) => new Date(b.charge_date) - new Date(a.charge_date));
 
     const teamRef = t.team_ref || `team-${t.team_id}`;
     return {
@@ -536,12 +621,13 @@ async function main() {
       website: t.website || null,
       email: t.email || null,
       color: t.color || '#888888',
-      entry_count: Number(t.entry_count),
-      completed_count: Number(t.completed_count),
-      first_charge: t.first_charge,
-      last_charge: t.last_charge,
-      raised_dollars: t.raised_dollars != null ? Number(t.raised_dollars) : null,
-      dollars_per_entry: t.dollars_per_entry != null ? Number(t.dollars_per_entry) : null,
+      entry_count: teamEntries.length,
+      completed_count: completedEntries.length,
+      first_charge: entriesByDate[0]?.charge_name || null,
+      last_charge: entriesByDate[entriesByDate.length - 1]?.charge_name || null,
+      raised_dollars: teamEntries.length ? raisedDollarsTotal : null,
+      dollars_per_entry: teamEntries.length ? raisedDollarsTotal / teamEntries.length : null,
+      award_sections: awardSections,
       entries: teamEntries,
     };
   });
@@ -568,9 +654,21 @@ async function main() {
         result_status: e.result_status || null,
         raised_dollars: e.raised_dollars != null ? Number(e.raised_dollars) : null,
         distance_net: e.distance_net != null ? Number(e.distance_net) : null,
+        net_distance_position: netDistancePositionByEntry[e.entry_id] || null,
+        class_distance_position: classDistancePositionByEntry[e.entry_id]?.position || null,
+        class_distance_total: classDistancePositionByEntry[e.entry_id]?.total || null,
       };
     });
     carEntries.sort((a, b) => new Date(b.charge_date) - new Date(a.charge_date));
+
+    // Recomputed from carEntries (already restricted to published charges)
+    // rather than trusting v_car's entry_count/team_count/last_charge, which
+    // are computed across all charges regardless of publish status.
+    const entriesByDate = carEntries
+      .filter((e) => e.charge_date)
+      .slice()
+      .sort((a, b) => new Date(a.charge_date) - new Date(b.charge_date));
+    const teamCount = new Set(carEntries.map((e) => e.team_id)).size;
 
     return {
       car_id: c.car_id,
@@ -580,9 +678,9 @@ async function main() {
       colour: c.colour || null,
       year: c.year != null ? Number(c.year) : null,
       registration: c.registration || null,
-      entry_count: Number(c.entry_count),
-      team_count: Number(c.team_count),
-      last_charge: c.last_charge || null,
+      entry_count: carEntries.length,
+      team_count: teamCount,
+      last_charge: entriesByDate[entriesByDate.length - 1]?.charge_name || null,
       entries: carEntries,
     };
   });

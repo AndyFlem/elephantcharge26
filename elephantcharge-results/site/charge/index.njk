@@ -14,33 +14,6 @@ layout: base.njk
     {{ charge.charge_date | date }} · {{ charge.location }}
   </p>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <span class="value">{{ charge.entry_count }}</span>
-      <span class="label">Entries</span>
-    </div>
-    <div class="stat-card">
-      <span class="value">{{ charge.entry_completed_count }}</span>
-      <span class="label">Completed</span>
-    </div>
-    <div class="stat-card">
-      <span class="value">{{ charge.entry_completed_pct | pct }}</span>
-      <span class="label">Finish rate</span>
-    </div>
-    <div class="stat-card">
-      <span class="value">{{ charge.raised_dollars | dollars }}</span>
-      <span class="label">Raised</span>
-    </div>
-    <div class="stat-card">
-      <span class="value">{{ charge.checkpoint_count }}</span>
-      <span class="label">Checkpoints</span>
-    </div>
-    <div class="stat-card">
-      <span class="value">{{ charge.gauntlet_multiplier }}×</span>
-      <span class="label">Gauntlet mult.</span>
-    </div>
-  </div>
-
   <nav class="page-tabs">
     <a href="/charge/{{ charge.charge_ref }}/" class="active">Results</a>
     <a href="/charge/{{ charge.charge_ref }}/checkpoints/">Checkpoints</a>
@@ -54,52 +27,58 @@ layout: base.njk
   </nav>
 </section>
 
-{% set map_image = "/charges/maps/EC" + charge.charge_ref + ".jpg" %}
-{% set kml_file = "/charges/kml/elephant_charge_" + charge.charge_ref + ".kml" %}
-<section class="map-downloads">
-  <a href="{{ map_image }}" target="_blank" rel="noopener" class="map-thumb">
-    <img src="{{ map_image }}" alt="Route map — {{ charge.charge_name }}" loading="lazy">
-  </a>
-  <div class="map-downloads-links">
-    <h2>Route Map &amp; GPS Track</h2>
-    <p class="small muted">Download the course map and the GPS track (KML) for this charge.</p>
-    <p>
-      <a href="{{ map_image }}" download role="button" class="outline">⬇ Map (JPG)</a>
-      <a href="{{ kml_file }}" download role="button" class="outline">⬇ GPS Track (KML)</a>
-    </p>
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="value">{{ charge.entry_count }}</span>
+    <span class="label">Entries</span>
   </div>
-</section>
+  <div class="stat-card">
+    <span class="value">{{ charge.entry_completed_count }}</span>
+    <span class="label">Completed</span>
+  </div>
+  <div class="stat-card">
+    <span class="value">{{ charge.entry_completed_pct | pct }}</span>
+    <span class="label">Finish rate</span>
+  </div>
+  <div class="stat-card">
+    <span class="value">{{ charge.raised_dollars | dollars }}</span>
+    <span class="label">Raised</span>
+  </div>
+  <div class="stat-card">
+    <span class="value">{{ charge.shortest_distance_m | km }}</span>
+    <span class="label">Shortest distance</span>
+  </div>
+</div>
 
 <section>
-  <h2>Results</h2>
   <div style="overflow-x:auto">
   <table>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Entry</th>
-        <th class="hide-mobile">Team</th>
-        <th>Class</th>
-        <th>Status</th>
-        <th>Net dist.</th>
-        <th>Competition dist.</th>
-        <th class="hide-mobile">Raised</th>
+        <th data-sort="number">#</th>
+        <th>Team</th>
+        <th data-sort="string">Class</th>
+        <th data-sort="number">Result</th>
+        <th class="distance" data-sort="number">Net dist.</th>
+        <th class="distance" data-sort="number">Competition dist.</th>
+        <th class="distance hide-mobile sortable sort-desc" data-sort="number" data-sort-dir="desc">Raised</th>
         <th class="hide-mobile">Categories</th>
       </tr>
     </thead>
     <tbody>
-      {% for entry in charge.entries %}
+      {% for entry in charge.entries | sortDesc('raised_dollars') %}
       <tr>
         <td class="car-no">{{ entry.car_no }}</td>
         <td>
           <span class="team-dot" style="background:{{ entry.color }}"></span>
           <a href="/entry/{{ entry.entry_id }}/">{{ entry.entry_name }}</a>
         </td>
-        <td class="hide-mobile small">
-          <a href="/team/{{ entry.team_ref }}/">{{ entry.team_name }}</a>
-        </td>
         <td class="small">{{ entry.class_name }}</td>
-        <td class="small no-wrap">
+        {# Completed entries rank above all others, by competition distance ascending;
+           everyone else ranks by checkpoints reached (leg_count) descending. The offset
+           below is larger than any realistic competition distance (metres) so the two
+           groups never interleave. #}
+        <td class="small no-wrap" data-sort-value="{% if entry.result_status == 'COMPLETE' %}{{ entry.distance_total_competition }}{% else %}{{ 10000000 - (entry.leg_count or 0) }}{% endif %}">
           {% if entry.result_status == 'COMPLETE' %}
           <span class="result-complete">✓ Complete</span>
           {% elif entry.result_status %}
@@ -108,17 +87,17 @@ layout: base.njk
           <span class="muted">—</span>
           {% endif %}
         </td>
-        <td class="distance">
+        <td class="distance" data-sort-value="{{ entry.distance_net }}">
           {% if entry.distance_net != null %}
           {{ entry.distance_net | km }}
           {% else %}—{% endif %}
         </td>
-        <td class="distance">
+        <td class="distance" data-sort-value="{{ entry.distance_total_competition if entry.result_status == 'COMPLETE' else '' }}">
           {% if entry.distance_total_competition != null %}
           {{ entry.distance_total_competition | km }}
           {% else %}—{% endif %}
         </td>
-        <td class="distance hide-mobile">{{ entry.raised_dollars | dollars }}</td>
+        <td class="distance hide-mobile" data-sort-value="{{ entry.raised_dollars }}">{{ entry.raised_dollars | dollars }}</td>
         <td class="small hide-mobile muted">{{ entry.categories or '—' }}</td>
       </tr>
       {% endfor %}
@@ -126,10 +105,6 @@ layout: base.njk
   </table>
   </div>
 
-  <p class="small muted">
-    Net distance = competition distance minus penalties. Shorter net distance = better result.
-    Gauntlet checkpoints carry a ×{{ charge.gauntlet_multiplier }} distance penalty.
-  </p>
 </section>
 
 {% if charge.spirit_name %}

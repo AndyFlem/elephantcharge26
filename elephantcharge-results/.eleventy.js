@@ -62,6 +62,17 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.addFilter('json', (value) => JSON.stringify(value));
 
+  eleventyConfig.addFilter('sortDesc', (arr, attribute) => {
+    return [...arr].sort((a, b) => {
+      const av = a[attribute];
+      const bv = b[attribute];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return bv - av;
+    });
+  });
+
   return {
     dir: {
       input: 'site',

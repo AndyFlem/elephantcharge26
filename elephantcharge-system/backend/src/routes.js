@@ -6,8 +6,10 @@ const EntryController = require('./controllers/EntryController')
 const TeamController = require('./controllers/TeamController')
 const CarController = require('./controllers/CarController')
 const SponsorController = require('./controllers/SponsorController')
+const BeneficiaryController = require('./controllers/BeneficiaryController')
 const GeotabController = require('./controllers/GeotabController')
 const CheckpointController = require('./controllers/CheckpointController')
+const GrantController = require('./controllers/GrantController')
 const TeltonikaController = require('./controllers/TeltonikaController')
 const TrackerController = require('./controllers/TrackerController')
 
@@ -71,6 +73,12 @@ module.exports = (app) => {
   app.put(prefix + '/checkpoint/:checkpoint_id', CheckpointController.update)
   app.delete(prefix + '/checkpoint/:checkpoint_id', CheckpointController.delete)
 
+  app.get(prefix + '/charge/:charge_id/grants', GrantController.index)
+  app.get(prefix + '/grant/:grant_id', GrantController.show)
+  app.post(prefix + '/grant', GrantController.create)
+  app.put(prefix + '/grant/:grant_id', GrantController.update)
+  app.delete(prefix + '/grant/:grant_id', GrantController.delete)
+
   app.get(prefix + '/teams', TeamController.index)
   app.get(prefix + '/charge/:charge_id/teamsAvailable', TeamController.indexAvailableForCharge)
   app.get(prefix + '/team/:team_id', TeamController.show)
@@ -92,7 +100,14 @@ module.exports = (app) => {
   app.post(prefix + '/sponsor', SponsorController.create)
   app.put(prefix + '/sponsor/:sponsor_id', SponsorController.update)
   app.delete(prefix + '/sponsor/:sponsor_id', SponsorController.delete)
-  
+
+  app.get(prefix + '/beneficiaries', BeneficiaryController.index)
+  app.get(prefix + '/beneficiary/:beneficiary_id', BeneficiaryController.show)
+  app.post(prefix + '/beneficiary', BeneficiaryController.create)
+  app.put(prefix + '/beneficiary/:beneficiary_id', BeneficiaryController.update)
+  app.delete(prefix + '/beneficiary/:beneficiary_id', BeneficiaryController.delete)
+  app.post(prefix + '/beneficiary/:beneficiary_id/logo', BeneficiaryController.uploadLogo)
+
   app.get(prefix + '/geotab/devices', GeotabController.indexDevices)
   app.get(prefix + '/geotab/:device_id/info', GeotabController.deviceInfo)
   

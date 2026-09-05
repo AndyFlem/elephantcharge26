@@ -15,7 +15,7 @@
 
 /* ── Typography ── */
 html {
-  font-size: 90%;
+  font-size: 95%;
 }
 
 body {
@@ -92,7 +92,7 @@ header.site-header ul:last-child a:hover {
   flex-shrink: 0;
   box-sizing: border-box;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.85);
+  background: #fff;
   border-radius: 50%;
 }
 
@@ -291,6 +291,15 @@ footer.site-footer a {
   border-top: none;
 }
 
+.award-section {
+  margin-bottom: 1.25rem;
+}
+
+.award-section h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
 @media (max-width: 760px) {
   .entry-overview {
     grid-template-columns: 1fr;
@@ -300,33 +309,39 @@ footer.site-footer a {
 /* ── Page tabs ── */
 .page-tabs {
   display: flex;
-  gap: 0;
-  margin-bottom: 1.5rem;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  margin-bottom: 1.75rem;
   border-bottom: 2px solid var(--pico-muted-border-color);
   padding-bottom: 0;
   flex-wrap: wrap;
 }
 
 .page-tabs a {
-  padding: 0.5rem 1rem;
+  padding: 0.65rem 1.35rem;
   text-decoration: none;
-  color: var(--pico-muted-color);
-  border-bottom: 3px solid transparent;
+  color: var(--pico-color);
+  background: transparent;
+  border-bottom: 4px solid transparent;
   margin-bottom: -2px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  transition: color 0.15s, border-color 0.15s;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
 
 .page-tabs a.active {
   color: var(--ec-red);
   border-bottom-color: var(--ec-red);
+  background: rgba(204, 36, 36, 0.08);
 }
 
 .page-tabs a:hover {
   color: var(--ec-navy);
   border-bottom-color: var(--ec-navy);
+  background: rgba(30, 50, 112, 0.06);
 }
 
 /* ── Results table ── */
@@ -344,6 +359,35 @@ table tbody tr:hover {
   background: rgba(30, 50, 112, 0.04);
 }
 
+table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.4rem;
+}
+
+table thead th.sortable:hover {
+  background: var(--ec-navy-dark);
+}
+
+table thead th.sortable::after {
+  content: '↕';
+  position: absolute;
+  right: 0.5rem;
+  opacity: 0.5;
+  font-size: 0.85em;
+}
+
+table thead th.sortable.sort-asc::after {
+  content: '↑';
+  opacity: 1;
+}
+
+table thead th.sortable.sort-desc::after {
+  content: '↓';
+  opacity: 1;
+}
+
 .result-complete { color: #2a7a2a; font-weight: 600; }
 .result-dnf      { color: var(--ec-red); font-weight: 500; }
 
@@ -358,7 +402,16 @@ table tbody tr:hover {
 }
 
 td.distance { font-variant-numeric: tabular-nums; text-align: right; }
+th.distance { text-align: right; }
 td.car-no   { font-weight: 700; text-align: center; width: 3rem; color: var(--ec-navy); }
+
+/* ── Home page charges map ── */
+.home-map {
+  height: 420px;
+  border-radius: 8px;
+  border: 1px solid var(--pico-muted-border-color);
+  margin-top: 1.25rem;
+}
 
 /* ── Charges grid (home page) ── */
 .charges-grid {
@@ -416,7 +469,7 @@ td.car-no   { font-weight: 700; text-align: center; width: 3rem; color: var(--ec
   color: var(--pico-muted-color);
 }
 
-.charge-card .charge-stats span:last-child {
+.charge-card .charge-stats span.stat-highlight {
   font-weight: 700;
   color: var(--ec-navy);
 }
@@ -565,36 +618,45 @@ td.car-no   { font-weight: 700; text-align: center; width: 3rem; color: var(--ec
 }
 
 /* ── Awards ── */
-.award-winner {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 0.9rem 0;
+.award-block {
+  padding: 1.5rem 0;
   border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
-.award-winner:last-child { border-bottom: none; }
+.award-block:first-child { padding-top: 0; }
+.award-block:last-child { border-bottom: none; }
+
+.award-block-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.15rem;
+}
 
 .award-ordinal {
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--ec-navy);
   opacity: 0.4;
-  min-width: 1.5rem;
-  text-align: right;
-  padding-top: 2px;
 }
 
 .award-name {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   color: var(--ec-navy);
 }
 
-.award-winner-name {
-  color: var(--pico-muted-color);
-  font-size: 0.85rem;
-  margin-top: 0.15rem;
+.award-block-scope {
+  margin-bottom: 0.85rem;
+}
+
+.award-winner-row {
+  background: rgba(204, 36, 36, 0.06);
+}
+
+.award-winner-row td {
+  font-weight: 700;
+  color: var(--ec-navy);
 }
 
 /* ── Beneficiary articles ── */

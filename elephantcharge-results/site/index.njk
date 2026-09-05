@@ -3,19 +3,64 @@ layout: base.njk
 title: Results
 ---
 
+<div id="charges-map" class="home-map" aria-label="Map of charge locations by year"></div>
+
 <div class="charges-grid">
   {% for charge in charges %}
   <a href="/charge/{{ charge.charge_ref }}/" class="charge-card">
-    <div class="charge-year">{{ charge.charge_ref }}</div>
-    <h3>{{ charge.charge_name }}</h3>
-    <div class="charge-location"> {{ charge.location }}</div>
+    <div class="charge-year">{{ charge.charge_name }}</div>
+    <h3>{{ charge.location }}</h3>
     <div class="charge-stats">
       <span>{{ charge.entry_count }} entries</span>
       <span>{{ charge.entry_completed_count }} finished</span>
       {% if charge.raised_dollars %}
-      <span>{{ charge.raised_dollars | dollars }}</span>
+      <span>{{ charge.raised_dollars | dollars }} raised</span>
+      {% endif %}
+      {% if charge.shortest_distance_m %}
+      <span>{{ charge.shortest_distance_m | km }} shortest</span>
       {% endif %}
     </div>
   </a>
   {% endfor %}
 </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  var charges = {{ charges | json | safe }};
+  var map = L.map('charges-map');
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  var markers = [];
+  charges.forEach(function (c) {
+    if (!c.map_center) return;
+    var marker = L.circleMarker([c.map_center.lat, c.map_center.lng], {
+      radius: 7,
+      weight: 2,
+      color: '#1E3270',
+      fillColor: '#CC2424',
+      fillOpacity: 0.9,
+    }).bindTooltip(String(c.charge_ref), {
+      permanent: true,
+      direction: 'top',
+      offset: [0, -6],
+      className: 'checkpoint-label',
+    });
+    marker.on('click', function () {
+      window.location.href = '/charge/' + c.charge_ref + '/';
+    });
+    marker.addTo(map);
+    markers.push(marker);
+  });
+
+  if (markers.length) {
+    map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+  } else {
+    map.setView([-15, 28.8], 6);
+  }
+})();
+</script>

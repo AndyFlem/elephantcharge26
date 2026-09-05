@@ -7,9 +7,10 @@ permalink: "/charge/{{ charge.charge_ref }}/map/"
 layout: base.njk
 ---
 
-<section class="charge-header" style="margin-bottom:0.75rem">
-  <p class="charge-meta"><a href="/charge/{{ charge.charge_ref }}/">← {{ charge.charge_name }}</a></p>
-  <h2 style="margin-bottom:0.5rem">GPS Tracks — {{ charge.charge_ref }}</h2>
+<section class="charge-header">
+  <p class="charge-meta"><a href="/">← All charges</a></p>
+  <h1>{{ charge.charge_name }}</h1>
+  <p class="charge-meta">{{ charge.charge_date | date }} · {{ charge.location }}</p>
 
   <nav class="page-tabs">
     <a href="/charge/{{ charge.charge_ref }}/">Results</a>
@@ -20,6 +21,22 @@ layout: base.njk
     {% endif %}
     <a href="/charge/{{ charge.charge_ref }}/map/" class="active">🗺 Map</a>
   </nav>
+</section>
+
+{% set map_image = "/charges/maps/EC" + charge.charge_ref + ".jpg" %}
+{% set kml_file = "/charges/kml/elephant_charge_" + charge.charge_ref + ".kml" %}
+<section class="map-downloads">
+  <a href="{{ map_image }}" target="_blank" rel="noopener" class="map-thumb">
+    <img src="{{ map_image }}" alt="Route map — {{ charge.charge_name }}" loading="lazy">
+  </a>
+  <div class="map-downloads-links">
+    <h2>Route Map &amp; GPS Track</h2>
+    <p class="small muted">Download the course map and the GPS track (KML) for this charge.</p>
+    <p>
+      <a href="{{ map_image }}" download role="button" class="outline">⬇ Map (JPG)</a>
+      <a href="{{ kml_file }}" download role="button" class="outline">⬇ GPS Track (KML)</a>
+    </p>
+  </div>
 </section>
 
 <div id="map-legend" class="map-legend" aria-label="Track legend">

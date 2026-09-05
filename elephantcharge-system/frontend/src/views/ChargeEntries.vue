@@ -40,7 +40,7 @@
     {title: 'Team', align: 'start', sortable: true, key: 'entry_name'},
     {title: 'Class', align: 'start', sortable: true, key: 'class_name'},
     {title: 'Categories', align: 'start', sortable: true, key: 'categories'},
-    {title: 'Pledge $', align: 'end', sortable: true, key: 'raised_dollars'},
+    {title: 'Pledge $', align: 'end', sortable: true, key: 'raised_dollars', sum: true},
     {title: 'Distances', align:'center', children: [
       {title: 'Measured', align: 'end', sortable: true, key: 'distance_total'},
       {title: 'Competition', align: 'end', sortable: true, key: 'distance_total_competition'},
@@ -55,6 +55,8 @@
     {key: 'distance_total_competition', formatter: format.distance},
     {key: 'distance_net', formatter: format.distance}
   ]
+
+  const flatEntryTableHeaders = entryTableHeaders.flatMap(h => h.children ? h.children : [h])
 
   function entryCreated() {
     reloadEntries()
@@ -120,6 +122,13 @@
           </TeamForm>
 
           <v-btn title="Delete entry" v-if="item.processing_status == 'NO_GPS'" size="x-small" variant="flat" @click="deleteEntry(item)" icon="mdi-delete"></v-btn>
+        </template>
+        <template v-slot:body.append="{ items }">
+          <tr>
+            <td v-for="(header, i) in flatEntryTableHeaders" :key="i" :class="header.align == 'end' ? 'text-end' : ''">
+              <b v-if="header.sum">{{ format.currency(items.reduce((acc, item) => acc + (item[header.key] || 0), 0)) }}</b>
+            </td>
+          </tr>
         </template>
         <template #bottom>
           <v-row class="mt-2 mb-2 mr-2">

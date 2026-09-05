@@ -1,0 +1,21 @@
+---
+layout: base.njk
+title: Results
+---
+
+<div class="charges-grid">
+  {% for charge in charges %}
+  <a href="/charge/{{ charge.charge_ref }}/" class="charge-card">
+    <div class="charge-year">{{ charge.charge_ref }}</div>
+    <h3>{{ charge.charge_name }}</h3>
+    <div class="charge-location"> {{ charge.location }}</div>
+    <div class="charge-stats">
+      <span>{{ charge.entry_count }} entries</span>
+      <span>{{ charge.entry_completed_count }} finished</span>
+      {% if charge.raised_dollars %}
+      <span>{{ charge.raised_dollars | dollars }}</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>

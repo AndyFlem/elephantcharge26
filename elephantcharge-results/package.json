@@ -1,0 +1,14 @@
+{
+  "name": "elephantcharge-results",
+  "version": "1.0.0",
+  "description": "Elephant Charge competition results website",
+  "scripts": {
+    "extract": "node scripts/extract.js",
+    "build": "node scripts/extract.js && npx @11ty/eleventy",
+    "start": "npx @11ty/eleventy --serve --incremental"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "pg": "^8.13.0"
+  }
+}

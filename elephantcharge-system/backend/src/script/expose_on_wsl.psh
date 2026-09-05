@@ -1,0 +1,6 @@
+netsh interface portproxy add v4tov4 `
+    listenport=4001 listenaddress=0.0.0.0 `
+    connectport=4001 connectaddress=172.27.208.1
+
+New-NetFirewallRule -DisplayName "WSL Forward 4001" `
+    -Direction Inbound -Action Allow -Protocol TCP -LocalPort 4001    

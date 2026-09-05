@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elephant Charge Results</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="container-fluid site-header">
+    <nav>
+      <ul>
+        <li>
+          <a href="/" class="site-brand">
+            <img src="/ec-logo.png" alt="Elephant Charge" class="site-logo">
+            <span class="site-title">
+              Elephant Charge
+              <span>Results</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+      <ul>
+        <li><a href="/">Charges</a></li>
+        <li><a href="/teams/">Teams</a></li>
+        <li><a href="/cars/">Cars</a></li>
+        <li><a href="/beneficiaries/">Beneficiaries</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    
+<section class="charge-header">
+  <p class="charge-meta"><a href="/">← All charges</a></p>
+  <h1>K2 &amp; Lendor Burton Elephant Charge 2016</h1>
+  <p class="charge-meta">1 October 2016 · Chongwe River</p>
+
+  <nav class="page-tabs">
+    <a href="/charge/2016/">Results</a>
+    <a href="/charge/2016/checkpoints/" class="active">Checkpoints</a>
+    <a href="/charge/2016/awards/">Awards</a>
+    
+    <a href="/charge/2016/grants/">Grants</a>
+    
+    
+    <a href="/charge/2016/map/">🗺 Map</a>
+    
+  </nav>
+</section>
+
+<section>
+  <h2>Checkpoints</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Sponsor</th>
+        <th>Type</th>
+        <th>Radius</th>
+        <th>Elevation</th>
+        <th>Check-ins</th>
+        <th class="hide-mobile">Starters</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>AON</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>1107 m</td>
+        <td>16</td>
+        <td class="hide-mobile">3</td>
+      </tr>
+      
+      <tr>
+        <td>Afgri Zambia</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>1004 m</td>
+        <td>19</td>
+        <td class="hide-mobile">6</td>
+      </tr>
+      
+      <tr>
+        <td>South City Church</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>975 m</td>
+        <td>18</td>
+        <td class="hide-mobile">6</td>
+      </tr>
+      
+      <tr>
+        <td>National Milling</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>1170 m</td>
+        <td>14</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Leopards Hill Memorial Park</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>1094 m</td>
+        <td>15</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Omnia</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>1080 m</td>
+        <td>13</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Kwik Fit</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>30 m</td>
+        <td>1136 m</td>
+        <td>18</td>
+        <td class="hide-mobile">3</td>
+      </tr>
+      
+      <tr>
+        <td>Maxxis</td>
+        <td>
+          
+          <mark>Gauntlet</mark>
+          
+        </td>
+        <td>15 m</td>
+        <td>963 m</td>
+        <td>15</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>NWK</td>
+        <td>
+          
+          <mark>Gauntlet</mark>
+          
+        </td>
+        <td>30 m</td>
+        <td>960 m</td>
+        <td>15</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Royal Air Charters</td>
+        <td>
+          
+          <mark>Gauntlet</mark>
+          
+        </td>
+        <td>15 m</td>
+        <td>960 m</td>
+        <td>15</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+</section>
+
+
+<section>
+  <h2>Legs</h2>
+  <p class="small muted">Straight-line distances between checkpoint pairs.</p>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Distance</th>
+        <th>Type</th>
+        <th>Entries</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td class="small">South City Church</td>
+        <td class="small">Leopards Hill Memorial Park</td>
+        <td class="distance">2.6 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>14</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Leopards Hill Memorial Park</td>
+        <td class="small">Omnia</td>
+        <td class="distance">2.9 km</td>
+        <td class="small">
+          
+          <ins>Tsetse</ins>
+          
+        </td>
+        <td>13</td>
+      </tr>
+      
+      <tr>
+        <td class="small">AON</td>
+        <td class="small">Omnia</td>
+        <td class="distance">2.8 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>12</td>
+      </tr>
+      
+      <tr>
+        <td class="small">AON</td>
+        <td class="small">National Milling</td>
+        <td class="distance">2.5 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>14</td>
+      </tr>
+      
+      <tr>
+        <td class="small">National Milling</td>
+        <td class="small">NWK</td>
+        <td class="distance">0.9 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>12</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Maxxis</td>
+        <td class="small">Royal Air Charters</td>
+        <td class="distance">0.2 km</td>
+        <td class="small">
+          <mark>Gauntlet</mark>
+          
+          
+        </td>
+        <td>12</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Afgri Zambia</td>
+        <td class="small">Kwik Fit</td>
+        <td class="distance">2.9 km</td>
+        <td class="small">
+          
+          <ins>Tsetse</ins>
+          
+        </td>
+        <td>14</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Afgri Zambia</td>
+        <td class="small">South City Church</td>
+        <td class="distance">2.2 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>13</td>
+      </tr>
+      
+      <tr>
+        <td class="small">NWK</td>
+        <td class="small">Royal Air Charters</td>
+        <td class="distance">0.3 km</td>
+        <td class="small">
+          <mark>Gauntlet</mark>
+          
+          
+        </td>
+        <td>12</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Kwik Fit</td>
+        <td class="small">Maxxis</td>
+        <td class="distance">1.7 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>11</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Maxxis</td>
+        <td class="small">NWK</td>
+        <td class="distance">0.2 km</td>
+        <td class="small">
+          <mark>Gauntlet</mark>
+          
+          
+        </td>
+        <td>5</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Kwik Fit</td>
+        <td class="small">Royal Air Charters</td>
+        <td class="distance">1.9 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>3</td>
+      </tr>
+      
+      <tr>
+        <td class="small">AON</td>
+        <td class="small">Leopards Hill Memorial Park</td>
+        <td class="distance">4.1 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+      <tr>
+        <td class="small">South City Church</td>
+        <td class="small">Kwik Fit</td>
+        <td class="distance">4.1 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+      <tr>
+        <td class="small">AON</td>
+        <td class="small">Afgri Zambia</td>
+        <td class="distance">5.3 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+      <tr>
+        <td class="small">National Milling</td>
+        <td class="small">Royal Air Charters</td>
+        <td class="distance">1.2 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Afgri Zambia</td>
+        <td class="small">Maxxis</td>
+        <td class="distance">2.6 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+</section>
+
+
+  </main>
+
+  <footer class="container-fluid site-footer">
+    <small>
+      
+      <a href="https://elephantcharge.org/" target="_blank" rel="noopener">elephantcharge.org</a>
+    </small>
+  </footer>
+</body>
+</html>

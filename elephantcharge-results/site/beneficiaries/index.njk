@@ -1,0 +1,64 @@
+---
+layout: base.njk
+title: Beneficiaries
+---
+
+<h1>Conservation Beneficiaries</h1>
+<p class="muted">
+  Funds raised by the Elephant Charge are distributed to conservation organisations across Zambia.
+</p>
+
+{% for org in beneficiaries %}
+<article id="{{ org.id }}">
+  <header>
+    <h2>{{ org.name }}</h2>
+    {% if org.geography_description %}
+    <p class="small muted">{{ org.geography_description }}</p>
+    {% endif %}
+  </header>
+
+  {% if org.description %}
+  <p class="small">{{ org.description }}</p>
+  {% endif %}
+
+  <div class="stats-grid" style="margin:0.75rem 0">
+    <div class="stat-card">
+      <span class="value">{{ org.charge_count }}</span>
+      <span class="label">Charges supported</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ org.total_kwacha | number }}</span>
+      <span class="label">Total ZMW received</span>
+    </div>
+  </div>
+
+  {% if org.grants.length %}
+  <details>
+    <summary class="small">Grant history ({{ org.grants.length }} grants)</summary>
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Amount (ZMW)</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grant in org.grants %}
+        <tr>
+          <td><a href="/charge/{{ grant.charge_ref }}/">{{ grant.charge_ref }}</a></td>
+          <td class="distance">{{ grant.grant_kwacha | number }}</td>
+          <td class="small muted">{{ grant.description or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+
+  <footer>
+    {% if org.website %}<a href="{{ org.website }}" target="_blank" rel="noopener" class="small">Website →</a>{% endif %}
+    {% if org.facebook %}&nbsp; <a href="{{ org.facebook }}" target="_blank" rel="noopener" class="small">Facebook →</a>{% endif %}
+  </footer>
+</article>
+{% endfor %}

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elephant Charge Results</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="container-fluid site-header">
+    <nav>
+      <ul>
+        <li>
+          <a href="/" class="site-brand">
+            <img src="/ec-logo.png" alt="Elephant Charge" class="site-logo">
+            <span class="site-title">
+              Elephant Charge
+              <span>Results</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+      <ul>
+        <li><a href="/">Charges</a></li>
+        <li><a href="/teams/">Teams</a></li>
+        <li><a href="/cars/">Cars</a></li>
+        <li><a href="/beneficiaries/">Beneficiaries</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    
+<section class="charge-header">
+  <p class="charge-meta"><a href="/">← All charges</a></p>
+  <h1>Elephant Charge 2009</h1>
+  <p class="charge-meta">24 October 2009 · Muchinda</p>
+
+  <nav class="page-tabs">
+    <a href="/charge/2009/">Results</a>
+    <a href="/charge/2009/checkpoints/" class="active">Checkpoints</a>
+    <a href="/charge/2009/awards/">Awards</a>
+    
+    <a href="/charge/2009/grants/">Grants</a>
+    
+    
+    <a href="/charge/2009/map/">🗺 Map</a>
+    
+  </nav>
+</section>
+
+<section>
+  <h2>Checkpoints</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Sponsor</th>
+        <th>Type</th>
+        <th>Radius</th>
+        <th>Elevation</th>
+        <th>Check-ins</th>
+        <th class="hide-mobile">Starters</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>SeedCo</td>
+        <td>
+          
+          <mark>Gauntlet</mark>
+          
+        </td>
+        <td>20 m</td>
+        <td>1033 m</td>
+        <td>7</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Leopards Hill Memorial Park</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>20 m</td>
+        <td>1225 m</td>
+        <td>11</td>
+        <td class="hide-mobile">3</td>
+      </tr>
+      
+      <tr>
+        <td>Equinox</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>20 m</td>
+        <td>1066 m</td>
+        <td>7</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Honda</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>20 m</td>
+        <td>1111 m</td>
+        <td>6</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>ZB</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>20 m</td>
+        <td>1090 m</td>
+        <td>8</td>
+        <td class="hide-mobile">3</td>
+      </tr>
+      
+      <tr>
+        <td>Verino</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>20 m</td>
+        <td>1279 m</td>
+        <td>10</td>
+        <td class="hide-mobile">2</td>
+      </tr>
+      
+      <tr>
+        <td>Geotab</td>
+        <td>
+          
+          Standard
+          
+        </td>
+        <td>20 m</td>
+        <td>1135 m</td>
+        <td>10</td>
+        <td class="hide-mobile">3</td>
+      </tr>
+      
+      <tr>
+        <td>Wilderness</td>
+        <td>
+          
+          <mark>Gauntlet</mark>
+          
+        </td>
+        <td>20 m</td>
+        <td>1029 m</td>
+        <td>8</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+      <tr>
+        <td>Khal Amazi</td>
+        <td>
+          
+          <mark>Gauntlet</mark>
+          
+        </td>
+        <td>20 m</td>
+        <td>1042 m</td>
+        <td>7</td>
+        <td class="hide-mobile">0</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+</section>
+
+
+<section>
+  <h2>Legs</h2>
+  <p class="small muted">Straight-line distances between checkpoint pairs.</p>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Distance</th>
+        <th>Type</th>
+        <th>Entries</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td class="small">Honda</td>
+        <td class="small">ZB</td>
+        <td class="distance">1.5 km</td>
+        <td class="small">
+          
+          <ins>Tsetse</ins>
+          
+        </td>
+        <td>4</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Honda</td>
+        <td class="small">Verino</td>
+        <td class="distance">1.3 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>6</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Leopards Hill Memorial Park</td>
+        <td class="small">Verino</td>
+        <td class="distance">1.4 km</td>
+        <td class="small">
+          
+          <ins>Tsetse</ins>
+          
+        </td>
+        <td>8</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Leopards Hill Memorial Park</td>
+        <td class="small">Geotab</td>
+        <td class="distance">2.5 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>8</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Equinox</td>
+        <td class="small">Geotab</td>
+        <td class="distance">1.9 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>7</td>
+      </tr>
+      
+      <tr>
+        <td class="small">SeedCo</td>
+        <td class="small">Equinox</td>
+        <td class="distance">0.6 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>4</td>
+      </tr>
+      
+      <tr>
+        <td class="small">SeedCo</td>
+        <td class="small">Wilderness</td>
+        <td class="distance">0.4 km</td>
+        <td class="small">
+          <mark>Gauntlet</mark>
+          
+          
+        </td>
+        <td>7</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Wilderness</td>
+        <td class="small">Khal Amazi</td>
+        <td class="distance">0.1 km</td>
+        <td class="small">
+          <mark>Gauntlet</mark>
+          
+          
+        </td>
+        <td>5</td>
+      </tr>
+      
+      <tr>
+        <td class="small">ZB</td>
+        <td class="small">Khal Amazi</td>
+        <td class="distance">2.0 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>7</td>
+      </tr>
+      
+      <tr>
+        <td class="small">SeedCo</td>
+        <td class="small">Khal Amazi</td>
+        <td class="distance">0.3 km</td>
+        <td class="small">
+          <mark>Gauntlet</mark>
+          
+          
+        </td>
+        <td>2</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Equinox</td>
+        <td class="small">Wilderness</td>
+        <td class="distance">0.9 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>2</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Verino</td>
+        <td class="small">Wilderness</td>
+        <td class="distance">3.2 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+      <tr>
+        <td class="small">Leopards Hill Memorial Park</td>
+        <td class="small">Equinox</td>
+        <td class="distance">1.1 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+      <tr>
+        <td class="small">SeedCo</td>
+        <td class="small">Geotab</td>
+        <td class="distance">1.9 km</td>
+        <td class="small">
+          
+          
+          Standard
+        </td>
+        <td>1</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+</section>
+
+
+  </main>
+
+  <footer class="container-fluid site-footer">
+    <small>
+      
+      <a href="https://elephantcharge.org/" target="_blank" rel="noopener">elephantcharge.org</a>
+    </small>
+  </footer>
+</body>
+</html>

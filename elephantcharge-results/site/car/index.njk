@@ -1,0 +1,77 @@
+---
+pagination:
+  data: cars
+  size: 1
+  alias: car
+permalink: "/car/{{ car.car_id }}/"
+layout: base.njk
+---
+
+<section class="charge-header">
+  <p class="charge-meta"><a href="/cars/">← All cars</a></p>
+  <h1>{{ car.car_name or 'Car ' + car.car_id }}</h1>
+  <p class="charge-meta">
+    {% if car.make %}{{ car.make }}{% endif %}
+    {% if car.model %} {{ car.model }}{% endif %}
+    {% if car.year %} · {{ car.year }}{% endif %}
+    {% if car.colour %} · {{ car.colour }}{% endif %}
+  </p>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="value">{{ car.entry_count }}</span>
+      <span class="label">Entries</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ car.team_count }}</span>
+      <span class="label">Teams</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ car.last_charge or '—' }}</span>
+      <span class="label">Last charge</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>History</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>#</th>
+        <th>Entry</th>
+        <th>Team</th>
+        <th>Status</th>
+        <th>Net dist.</th>
+        <th class="hide-mobile">Raised</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in car.entries %}
+      <tr>
+        <td><a href="/charge/{{ entry.charge_ref }}/">{{ entry.charge_ref }}</a></td>
+        <td class="car-no">{{ entry.car_no }}</td>
+        <td>{{ entry.entry_name }}</td>
+        <td class="small">
+          <span class="team-dot" style="background:{{ charges | selectattr('charge_ref', 'equalto', entry.charge_ref) | first | default({}) and '#888' }}"></span>
+          <a href="/team/{{ entry.team_ref }}/">{{ entry.team_name }}</a>
+        </td>
+        <td class="small">
+          {% if entry.result_status == 'COMPLETE' %}
+          <span class="result-complete">✓</span>
+          {% elif entry.result_status %}
+          <span class="result-dnf">{{ entry.result_status }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="distance">
+          {% if entry.distance_net != null %}{{ entry.distance_net | km }}{% else %}—{% endif %}
+        </td>
+        <td class="distance hide-mobile">{{ entry.raised_dollars | dollars }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>

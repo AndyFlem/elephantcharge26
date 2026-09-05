@@ -1,0 +1,100 @@
+---
+pagination:
+  data: teams
+  size: 1
+  alias: team
+permalink: "/team/{{ team.team_ref }}/"
+layout: base.njk
+---
+
+<section class="charge-header">
+  <p class="charge-meta"><a href="/teams/">← All teams</a></p>
+
+  <h1>
+    <span class="team-dot" style="background:{{ team.color }};width:18px;height:18px"></span>
+    {{ team.team_name }}
+  </h1>
+
+  {% if team.captain %}<p class="charge-meta">Captain: {{ team.captain }}</p>{% endif %}
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="value">{{ team.entry_count }}</span>
+      <span class="label">Entries</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ team.completed_count }}</span>
+      <span class="label">Completed</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ team.first_charge or '—' }}</span>
+      <span class="label">First charge</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ team.last_charge or '—' }}</span>
+      <span class="label">Last charge</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ team.raised_dollars | dollars }}</span>
+      <span class="label">Total raised</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ team.dollars_per_entry | dollars }}</span>
+      <span class="label">Per entry</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>History</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>#</th>
+        <th>Entry name</th>
+        <th>Car</th>
+        <th>Class</th>
+        <th>Status</th>
+        <th>Net dist.</th>
+        <th class="hide-mobile">Raised</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in team.entries %}
+      <tr>
+        <td><a href="/charge/{{ entry.charge_ref }}/">{{ entry.charge_ref }}</a></td>
+        <td class="car-no">{{ entry.car_no }}</td>
+        <td>{{ entry.entry_name }}</td>
+        <td class="small hide-mobile">
+          {% if entry.car_id %}
+          <a href="/car/{{ entry.car_id }}/">{{ entry.car_name or 'Car ' + entry.car_id }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td class="small">{{ entry.class_name }}</td>
+        <td class="small">
+          {% if entry.result_status == 'COMPLETE' %}
+          <span class="result-complete">✓</span>
+          {% elif entry.result_status %}
+          <span class="result-dnf">{{ entry.result_status }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="distance">
+          {% if entry.distance_net != null %}{{ entry.distance_net | km }}{% else %}—{% endif %}
+        </td>
+        <td class="distance hide-mobile">{{ entry.raised_dollars | dollars }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+{% if team.website or team.email %}
+<section>
+  <h2>Contact</h2>
+  {% if team.website %}<p><a href="{{ team.website }}" target="_blank" rel="noopener">{{ team.website }}</a></p>{% endif %}
+  {% if team.email %}<p><a href="mailto:{{ team.email }}">{{ team.email }}</a></p>{% endif %}
+</section>
+{% endif %}

@@ -1,0 +1,147 @@
+---
+pagination:
+  data: charges
+  size: 1
+  alias: charge
+permalink: "/charge/{{ charge.charge_ref }}/"
+layout: base.njk
+---
+
+<section class="charge-header">
+  <p class="charge-meta"><a href="/">← All charges</a></p>
+  <h1>{{ charge.charge_name }}</h1>
+  <p class="charge-meta">
+    {{ charge.charge_date | date }} · {{ charge.location }}
+  </p>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="value">{{ charge.entry_count }}</span>
+      <span class="label">Entries</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ charge.entry_completed_count }}</span>
+      <span class="label">Completed</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ charge.entry_completed_pct | pct }}</span>
+      <span class="label">Finish rate</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ charge.raised_dollars | dollars }}</span>
+      <span class="label">Raised</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ charge.checkpoint_count }}</span>
+      <span class="label">Checkpoints</span>
+    </div>
+    <div class="stat-card">
+      <span class="value">{{ charge.gauntlet_multiplier }}×</span>
+      <span class="label">Gauntlet mult.</span>
+    </div>
+  </div>
+
+  <nav class="page-tabs">
+    <a href="/charge/{{ charge.charge_ref }}/" class="active">Results</a>
+    <a href="/charge/{{ charge.charge_ref }}/checkpoints/">Checkpoints</a>
+    <a href="/charge/{{ charge.charge_ref }}/awards/">Awards</a>
+    {% if charge.grants.length %}
+    <a href="/charge/{{ charge.charge_ref }}/grants/">Grants</a>
+    {% endif %}
+    {% if charge.has_gps_tracks %}
+    <a href="/charge/{{ charge.charge_ref }}/map/">🗺 Map</a>
+    {% endif %}
+  </nav>
+</section>
+
+{% set map_image = "/charges/maps/EC" + charge.charge_ref + ".jpg" %}
+{% set kml_file = "/charges/kml/elephant_charge_" + charge.charge_ref + ".kml" %}
+<section class="map-downloads">
+  <a href="{{ map_image }}" target="_blank" rel="noopener" class="map-thumb">
+    <img src="{{ map_image }}" alt="Route map — {{ charge.charge_name }}" loading="lazy">
+  </a>
+  <div class="map-downloads-links">
+    <h2>Route Map &amp; GPS Track</h2>
+    <p class="small muted">Download the course map and the GPS track (KML) for this charge.</p>
+    <p>
+      <a href="{{ map_image }}" download role="button" class="outline">⬇ Map (JPG)</a>
+      <a href="{{ kml_file }}" download role="button" class="outline">⬇ GPS Track (KML)</a>
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Results</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Entry</th>
+        <th class="hide-mobile">Team</th>
+        <th>Class</th>
+        <th>Status</th>
+        <th>Net dist.</th>
+        <th>Competition dist.</th>
+        <th class="hide-mobile">Raised</th>
+        <th class="hide-mobile">Categories</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in charge.entries %}
+      <tr>
+        <td class="car-no">{{ entry.car_no }}</td>
+        <td>
+          <span class="team-dot" style="background:{{ entry.color }}"></span>
+          <a href="/team/{{ entry.team_ref }}/">{{ entry.entry_name }}</a>
+        </td>
+        <td class="hide-mobile small">
+          <a href="/team/{{ entry.team_ref }}/">{{ entry.team_name }}</a>
+        </td>
+        <td class="small">{{ entry.class_name }}</td>
+        <td class="small no-wrap">
+          {% if entry.result_status == 'COMPLETE' %}
+          <span class="result-complete">✓ Complete</span>
+          {% elif entry.result_status %}
+          <span class="result-dnf">{{ entry.result_status }}</span>
+          {% else %}
+          <span class="muted">—</span>
+          {% endif %}
+        </td>
+        <td class="distance">
+          {% if entry.distance_net != null %}
+          {{ entry.distance_net | km }}
+          {% else %}—{% endif %}
+        </td>
+        <td class="distance">
+          {% if entry.distance_total_competition != null %}
+          {{ entry.distance_total_competition | km }}
+          {% else %}—{% endif %}
+        </td>
+        <td class="distance hide-mobile">{{ entry.raised_dollars | dollars }}</td>
+        <td class="small hide-mobile muted">{{ entry.categories or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <p class="small muted">
+    Net distance = competition distance minus penalties. Shorter net distance = better result.
+    Gauntlet checkpoints carry a ×{{ charge.gauntlet_multiplier }} distance penalty.
+  </p>
+</section>
+
+{% if charge.spirit_name %}
+<section>
+  <h2>Spirit of the Charge</h2>
+  <p><strong>{{ charge.spirit_name }}</strong>{% if charge.spirit_description %} — {{ charge.spirit_description }}{% endif %}</p>
+</section>
+{% endif %}
+
+{% if charge.shafted_description %}
+<section>
+  <h2>Most Shafted</h2>
+  <p>{{ charge.shafted_description }}</p>
+</section>
+{% endif %}

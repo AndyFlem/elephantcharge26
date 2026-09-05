@@ -1,0 +1,103 @@
+---
+pagination:
+  data: charges
+  size: 1
+  alias: charge
+permalink: "/charge/{{ charge.charge_ref }}/map/"
+layout: base.njk
+---
+
+<section class="charge-header" style="margin-bottom:0.75rem">
+  <p class="charge-meta"><a href="/charge/{{ charge.charge_ref }}/">← {{ charge.charge_name }}</a></p>
+  <h2 style="margin-bottom:0.5rem">GPS Tracks — {{ charge.charge_ref }}</h2>
+
+  <nav class="page-tabs">
+    <a href="/charge/{{ charge.charge_ref }}/">Results</a>
+    <a href="/charge/{{ charge.charge_ref }}/checkpoints/">Checkpoints</a>
+    <a href="/charge/{{ charge.charge_ref }}/awards/">Awards</a>
+    {% if charge.grants.length %}
+    <a href="/charge/{{ charge.charge_ref }}/grants/">Grants</a>
+    {% endif %}
+    <a href="/charge/{{ charge.charge_ref }}/map/" class="active">🗺 Map</a>
+  </nav>
+</section>
+
+<div id="map-legend" class="map-legend" aria-label="Track legend">
+  <span class="muted small">Loading tracks…</span>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  var chargeRef = '{{ charge.charge_ref }}';
+  var centerLat = {{ charge.map_center.lat if charge.map_center else -15 }};
+  var centerLng = {{ charge.map_center.lng if charge.map_center else 28.5 }};
+
+  var map = L.map('map').setView([centerLat, centerLng], 11);
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  fetch('/data/tracks/' + chargeRef + '.geojson')
+    .then(function (r) {
+      if (!r.ok) throw new Error('tracks not found');
+      return r.json();
+    })
+    .then(function (data) {
+      if (!data.features || data.features.length === 0) {
+        document.getElementById('map-legend').textContent = 'No GPS track data for this charge.';
+        return;
+      }
+
+      var geoLayer = L.geoJSON(data, {
+        style: function (feature) {
+          return {
+            color: feature.properties.color || '#888',
+            weight: 2.5,
+            opacity: 0.75,
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          var p = feature.properties;
+          var km = p.distance_total_competition != null
+            ? (p.distance_total_competition / 1000).toFixed(1) + ' km'
+            : '—';
+          var net = p.distance_net != null
+            ? (p.distance_net / 1000).toFixed(1) + ' km net'
+            : '';
+          layer.bindPopup(
+            '<strong>Car ' + p.car_no + ' – ' + p.entry_name + '</strong><br>' +
+            (p.team_name || '') + '<br>' +
+            (p.result_status || '') + '<br>' +
+            km + (net ? ' / ' + net : '')
+          );
+          layer.on('mouseover', function () { layer.setStyle({ weight: 4, opacity: 1 }); });
+          layer.on('mouseout',  function () { geoLayer.resetStyle(layer); });
+        },
+      }).addTo(map);
+
+      map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+
+      // Build legend
+      var legendEl = document.getElementById('map-legend');
+      legendEl.innerHTML = '';
+      data.features.forEach(function (f) {
+        var p = f.properties;
+        var item = document.createElement('span');
+        item.className = 'map-legend-item';
+        item.innerHTML =
+          '<span class="team-dot" style="background:' + (p.color || '#888') + '"></span>' +
+          p.car_no + ' ' + p.entry_name;
+        legendEl.appendChild(item);
+      });
+    })
+    .catch(function (err) {
+      document.getElementById('map-legend').textContent = 'GPS tracks not available for this charge.';
+      console.warn(err);
+    });
+})();
+</script>

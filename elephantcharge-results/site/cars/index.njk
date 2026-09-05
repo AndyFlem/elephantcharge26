@@ -1,0 +1,38 @@
+---
+layout: base.njk
+title: Cars
+---
+
+<h1>Cars</h1>
+<p class="muted">{{ cars.length }} vehicles have competed in the Elephant Charge.</p>
+
+<div style="overflow-x:auto">
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Make / Model</th>
+      <th>Year</th>
+      <th>Entries</th>
+      <th>Teams</th>
+      <th>Last charge</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for car in cars %}
+    <tr>
+      <td><a href="/car/{{ car.car_id }}/">{{ car.car_name or 'Car ' + car.car_id }}</a></td>
+      <td class="small">
+        {% if car.make %}{{ car.make }}{% endif %}
+        {% if car.model %} {{ car.model }}{% endif %}
+        {% if not car.make and not car.model %}—{% endif %}
+      </td>
+      <td class="small">{{ car.year or '—' }}</td>
+      <td>{{ car.entry_count }}</td>
+      <td>{{ car.team_count }}</td>
+      <td class="small">{{ car.last_charge or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>

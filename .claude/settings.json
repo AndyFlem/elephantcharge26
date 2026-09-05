@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(python3 *)",
+      "Bash(psql *)",
+      "Bash(PGPASSWORD=extramild20 psql *)",
+      "Bash(pg_dump *)",
+      "Bash(PGPASSWORD=extramild20 pg_dump *)"
+    ]
+  }
+}

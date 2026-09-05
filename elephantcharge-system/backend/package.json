@@ -1,0 +1,30 @@
+{
+  "name": "ec23_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "DEBUG=ec23:* nodemon src/app.js",
+    "lint": "eslint **/*.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@xmldom/xmldom": "^0.8.10",
+    "axios": "^1.13.2",
+    "body-parse": "^0.1.0",
+    "cors": "^2.8.5",
+    "debug": "^4.3.4",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.5.1",
+    "knex": "^2.4.2",
+    "luxon": "^3.2.1",
+    "moment": "^2.29.4",
+    "pg": "^8.9.0",
+    "pg-hstore": "^2.3.4",
+    "tedious": "^18.6.2",
+    "xmlbuilder2": "^3.1.1",
+    "xpath": "^0.0.34",
+    "yauzl-promise": "^4.0.0"
+  }
+}

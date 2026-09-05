@@ -1,0 +1,97 @@
+---
+pagination:
+  data: charges
+  size: 1
+  alias: charge
+permalink: "/charge/{{ charge.charge_ref }}/checkpoints/"
+layout: base.njk
+---
+
+<section class="charge-header">
+  <p class="charge-meta"><a href="/">← All charges</a></p>
+  <h1>{{ charge.charge_name }}</h1>
+  <p class="charge-meta">{{ charge.charge_date | date }} · {{ charge.location }}</p>
+
+  <nav class="page-tabs">
+    <a href="/charge/{{ charge.charge_ref }}/">Results</a>
+    <a href="/charge/{{ charge.charge_ref }}/checkpoints/" class="active">Checkpoints</a>
+    <a href="/charge/{{ charge.charge_ref }}/awards/">Awards</a>
+    {% if charge.grants.length %}
+    <a href="/charge/{{ charge.charge_ref }}/grants/">Grants</a>
+    {% endif %}
+    {% if charge.has_gps_tracks %}
+    <a href="/charge/{{ charge.charge_ref }}/map/">🗺 Map</a>
+    {% endif %}
+  </nav>
+</section>
+
+<section>
+  <h2>Checkpoints</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Sponsor</th>
+        <th>Type</th>
+        <th>Radius</th>
+        <th>Elevation</th>
+        <th>Check-ins</th>
+        <th class="hide-mobile">Starters</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cp in charge.checkpoints %}
+      <tr>
+        <td>{{ cp.sponsor_name }}</td>
+        <td>
+          {% if cp.is_gauntlet %}
+          <mark>Gauntlet</mark>
+          {% else %}
+          Standard
+          {% endif %}
+        </td>
+        <td>{{ cp.radius_m }} m</td>
+        <td>{% if cp.elevation %}{{ cp.elevation }} m{% else %}—{% endif %}</td>
+        <td>{{ cp.checkins_count }}</td>
+        <td class="hide-mobile">{{ cp.starters_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+{% if charge.legs.length %}
+<section>
+  <h2>Legs</h2>
+  <p class="small muted">Straight-line distances between checkpoint pairs.</p>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Distance</th>
+        <th>Type</th>
+        <th>Entries</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for leg in charge.legs %}
+      <tr>
+        <td class="small">{{ leg.checkpoint1_name }}</td>
+        <td class="small">{{ leg.checkpoint2_name }}</td>
+        <td class="distance">{{ leg.distance_m | km }}</td>
+        <td class="small">
+          {% if leg.is_gauntlet %}<mark>Gauntlet</mark>{% endif %}
+          {% if leg.is_tsetse %}<ins>Tsetse</ins>{% endif %}
+          {% if not leg.is_gauntlet and not leg.is_tsetse %}Standard{% endif %}
+        </td>
+        <td>{{ leg.entry_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}

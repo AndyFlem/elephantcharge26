@@ -1,0 +1,39 @@
+---
+layout: base.njk
+title: Teams
+---
+
+<h1>Teams</h1>
+<p class="muted">{{ teams.length }} teams have entered the Elephant Charge.</p>
+
+<div style="overflow-x:auto">
+<table>
+  <thead>
+    <tr>
+      <th>Team</th>
+      <th>Captain</th>
+      <th>Entries</th>
+      <th>Completed</th>
+      <th>First</th>
+      <th>Last</th>
+      <th class="hide-mobile">Total raised</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for team in teams %}
+    <tr>
+      <td>
+        <span class="team-dot" style="background:{{ team.color }}"></span>
+        <a href="/team/{{ team.team_ref }}/">{{ team.team_name }}</a>
+      </td>
+      <td class="small">{{ team.captain or '—' }}</td>
+      <td>{{ team.entry_count }}</td>
+      <td>{{ team.completed_count }}</td>
+      <td class="small">{{ team.first_charge or '—' }}</td>
+      <td class="small">{{ team.last_charge or '—' }}</td>
+      <td class="distance hide-mobile">{{ team.raised_dollars | dollars }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>

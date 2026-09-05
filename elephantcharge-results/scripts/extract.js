@@ -52,47 +52,49 @@ function parseGeoJson(str) {
 }
 
 // ─── Award winner computation ───────────────────────────────────────────────
+//
+// Mirrors elephantcharge-system's ChargeController#awardResults (the
+// organizer-facing /api/v1/charge/:id/award_results endpoint) exactly, so the
+// published results agree with the live admin tool. That endpoint queries
+// v_distanceawardresults / v_pledgeawardresults (class/category matching is
+// done by the view's join) and, per award:
+//   - if sort_result_status: ORDER BY leg_count DESC, <value> <dir>
+//   - else:                  ORDER BY <value> <dir>
+// taking the top row — there is no COMPLETE/DNF filtering. leg_count-first
+// ranks entries that finished more legs above ones that stopped early with a
+// misleadingly short driven distance; it is not a "must be complete" filter.
+// (This function used to reimplement the view's class/category join in JS
+// AND wrongly filtered to result_status === 'COMPLETE' — both views and this
+// endpoint's exact sort were unreadable/unknown as the postgres user until
+// scripts/fix_award_permissions.sql granted elephant_charge SELECT on award.)
+function compareNullsLastAsc(a, b) {
+  if (a == null) return b == null ? 0 : 1;
+  if (b == null) return -1;
+  return a - b;
+}
 
-function computeAwardWinners(awards, chargeEntries, entryCategories, entryDistances) {
-  const catsByEntry = {};
-  for (const ec of entryCategories) {
-    if (!catsByEntry[ec.entry_id]) catsByEntry[ec.entry_id] = new Set();
-    catsByEntry[ec.entry_id].add(Number(ec.category_id));
-  }
+function compareNullsFirstDesc(a, b) {
+  if (a == null) return b == null ? 0 : -1;
+  if (b == null) return 1;
+  return b - a;
+}
 
-  const distsByEntry = {};
-  for (const ed of entryDistances) {
-    if (!distsByEntry[ed.entry_id]) distsByEntry[ed.entry_id] = {};
-    distsByEntry[ed.entry_id][ed.distance_ref] = Number(ed.distance_m);
-  }
-
+function computeAwardWinners(awards, chargeId, distanceAwardRows, pledgeAwardRows) {
   return awards.map((award) => {
-    let eligible = chargeEntries.filter((e) => {
-      if (award.sort_result_status === true && e.result_status !== 'COMPLETE') return false;
-      if (award.class_id && Number(e.class_id) !== Number(award.class_id)) return false;
-      if (award.category_id) {
-        const cats = catsByEntry[e.entry_id];
-        if (!cats || !cats.has(Number(award.category_id))) return false;
-      }
-      return true;
-    });
-
-    let winner = null;
-
-    if (award.type_ref === 'DISTANCE' && award.distance_ref) {
-      eligible = eligible.filter(
-        (e) => distsByEntry[e.entry_id]?.[award.distance_ref] != null
-      );
-      eligible.sort(
-        (a, b) =>
-          distsByEntry[a.entry_id][award.distance_ref] -
-          distsByEntry[b.entry_id][award.distance_ref]
-      );
-      winner = eligible[0] || null;
-    } else if (award.type_ref === 'PLEDGE') {
-      eligible.sort((a, b) => (b.raised_dollars || 0) - (a.raised_dollars || 0));
-      winner = eligible[0] || null;
-    }
+    const rows = award.type_ref === 'DISTANCE' ? distanceAwardRows : pledgeAwardRows;
+    const results = rows
+      .filter((r) => r.award_id === award.award_id && r.charge_id === chargeId)
+      .slice()
+      .sort((a, b) => {
+        if (award.sort_result_status) {
+          const legCmp = compareNullsFirstDesc(a.leg_count, b.leg_count);
+          if (legCmp !== 0) return legCmp;
+        }
+        return award.type_ref === 'DISTANCE'
+          ? compareNullsLastAsc(a.distance_m, b.distance_m)
+          : compareNullsFirstDesc(a.raised_dollars, b.raised_dollars);
+      });
+    const winner = results[0] || null;
 
     return {
       award_id: Number(award.award_id),
@@ -108,10 +110,7 @@ function computeAwardWinners(awards, chargeEntries, entryCategories, entryDistan
             car_no: winner.car_no,
             entry_name: winner.entry_name,
             result_status: winner.result_status,
-            value:
-              award.type_ref === 'DISTANCE'
-                ? distsByEntry[winner.entry_id][award.distance_ref]
-                : winner.raised_dollars,
+            value: Number(award.type_ref === 'DISTANCE' ? winner.distance_m : winner.raised_dollars),
           }
         : null,
     };
@@ -157,18 +156,20 @@ async function main() {
     ORDER BY ve.charge_id, ve.distance_net NULLS LAST
   `);
 
-  // ── Entry categories ───────────────────────────────────────────────────────
-  const entryCategoryRows = await query(`
-    SELECT ec.entry_id, ec.category_id, ca.category_ref, ca.category
-    FROM entry_category ec
-    JOIN category ca ON ec.category_id = ca.category_id
-  `);
-
   // ── Entry distances (all) ──────────────────────────────────────────────────
   const entryDistanceRows = await query(`
     SELECT ed.entry_id, ed.distance_ref, ed.distance_m, e.charge_id
     FROM entry_distance ed
     JOIN entry e ON ed.entry_id = e.entry_id
+  `);
+
+  // ── Entry legs (per-entry leg-by-leg breakdown) ────────────────────────────
+  const entryLegRows = await query(`
+    SELECT entry_id, leg_no, checkpoint1_name, checkpoint2_name,
+      start_time, end_time, elapsed_s, distance_m, distance_multiple, speed,
+      is_gauntlet, is_tsetse, leg_position, leg_entries, charge_id
+    FROM v_entry_leg
+    ORDER BY charge_id, entry_id, leg_no
   `);
 
   // ── Checkpoints ────────────────────────────────────────────────────────────
@@ -198,6 +199,17 @@ async function main() {
     LEFT JOIN class cl ON a.class_id = cl.class_id
     LEFT JOIN category ca ON a.category_id = ca.category_id
     ORDER BY a.ordinal
+  `);
+
+  // ── Award eligibility/results (class + category matching done by the view) ─
+  const distanceAwardRows = await query(`
+    SELECT award_id, charge_id, entry_id, car_no, entry_name, result_status, leg_count, distance_m
+    FROM v_distanceawardresults
+  `);
+
+  const pledgeAwardRows = await query(`
+    SELECT award_id, charge_id, entry_id, car_no, entry_name, result_status, leg_count, raised_dollars
+    FROM v_pledgeawardresults
   `);
 
   // ── Grants ─────────────────────────────────────────────────────────────────
@@ -236,23 +248,26 @@ async function main() {
     ORDER BY last_charge DESC NULLS LAST, entry_count DESC
   `);
 
-  // ── GPS tracks ─────────────────────────────────────────────────────────────
+  // ── GPS tracks (completed legs only, not the full raw/clean track) ─────────
   const trackRows = await query(`
     SELECT
-      e.charge_id, e.entry_id, e.car_no, e.entry_name, e.result_status,
+      e.charge_id, vel.entry_id, e.car_no, e.entry_name, e.result_status,
       t.color, t.team_name,
       ed_net.distance_m AS distance_net,
       ed_total.distance_m AS distance_total_competition,
-      eg.clean_line_json
-    FROM entry e
+      vel.leg_no, vel.checkpoint1_name, vel.checkpoint2_name,
+      vel.distance_m AS leg_distance_m, vel.elapsed_s,
+      vel.is_gauntlet, vel.is_tsetse,
+      ST_AsGeoJSON(el.leg_line) AS leg_line_json
+    FROM v_entry_leg vel
+    JOIN entry_leg el ON el.entry_leg_id = vel.entry_leg_id
+    JOIN entry e ON e.entry_id = vel.entry_id
     JOIN team t ON e.team_id = t.team_id
-    JOIN entry_geometry eg ON eg.entry_id = e.entry_id
     LEFT JOIN entry_distance ed_net
       ON ed_net.entry_id = e.entry_id AND ed_net.distance_ref = 'NET'
     LEFT JOIN entry_distance ed_total
       ON ed_total.entry_id = e.entry_id AND ed_total.distance_ref = 'TOTAL_COMPETITION'
-    WHERE eg.clean_line_json IS NOT NULL
-    ORDER BY e.charge_id, e.car_no
+    ORDER BY e.charge_id, e.car_no, vel.leg_no
   `);
 
   console.log(
@@ -267,15 +282,12 @@ async function main() {
   const legsByCharge = groupBy(legRows, 'charge_id');
   const grantsByCharge = groupBy(grantRows, 'charge_id');
   const tracksByCharge = groupBy(trackRows, 'charge_id');
-  const distsByCharge = groupBy(entryDistanceRows, 'charge_id');
-  const catsByCharge = groupBy(entryCategoryRows.map(ec => {
-    // look up the entry's charge_id via entryRows
-    const entry = entryRows.find(e => e.entry_id === ec.entry_id);
-    return { ...ec, charge_id: entry?.charge_id };
-  }), 'charge_id');
+  const legsByEntry = groupBy(entryLegRows, 'entry_id');
+  const distsByEntryFull = groupBy(entryDistanceRows, 'entry_id');
 
   // ── Build charges.json ────────────────────────────────────────────────────
   console.log('\nBuilding charges.json...');
+  const awardsByEntry = {};
   const charges = chargeRows.map((c) => {
     const cid = c.charge_id;
     const entries = (entriesByCharge[cid] || []).map((e) => ({
@@ -338,9 +350,13 @@ async function main() {
       description: g.description || null,
     }));
 
-    const chargeDists = distsByCharge[cid] || [];
-    const chargeCats = catsByCharge[cid] || [];
-    const awardWinners = computeAwardWinners(awardRows, entries, chargeCats, chargeDists);
+    const awardWinners = computeAwardWinners(awardRows, cid, distanceAwardRows, pledgeAwardRows);
+
+    for (const aw of awardWinners) {
+      if (!aw.winner) continue;
+      if (!awardsByEntry[aw.winner.entry_id]) awardsByEntry[aw.winner.entry_id] = [];
+      awardsByEntry[aw.winner.entry_id].push({ award_id: aw.award_id, name: aw.name });
+    }
 
     const mapCenter = parseGeoJson(c.map_center);
     const center = mapCenter
@@ -385,6 +401,65 @@ async function main() {
 
   writeJson('site/_data/charges.json', charges);
 
+  // ── Build entries.json (one page per entry: summary, legs, map) ───────────
+  console.log('\nBuilding entries.json...');
+  const entries = entryRows.map((e) => {
+    const charge = chargeRows.find((c) => c.charge_id === e.charge_id);
+
+    const distances = {};
+    for (const d of distsByEntryFull[e.entry_id] || []) {
+      distances[d.distance_ref] = Number(d.distance_m);
+    }
+
+    const legs = (legsByEntry[e.entry_id] || []).map((l) => ({
+      leg_no: l.leg_no,
+      checkpoint1_name: l.checkpoint1_name,
+      checkpoint2_name: l.checkpoint2_name,
+      start_time: l.start_time,
+      end_time: l.end_time,
+      elapsed_s: l.elapsed_s != null ? Number(l.elapsed_s) : null,
+      distance_m: l.distance_m != null ? Number(l.distance_m) : null,
+      distance_multiple: l.distance_multiple != null ? Number(l.distance_multiple) : null,
+      speed: l.speed != null ? Number(l.speed) : null,
+      is_gauntlet: l.is_gauntlet,
+      is_tsetse: l.is_tsetse,
+      leg_position: Number(l.leg_position),
+      leg_entries: Number(l.leg_entries),
+    }));
+
+    return {
+      entry_id: e.entry_id,
+      charge_id: e.charge_id,
+      charge_ref: charge?.charge_ref || null,
+      charge_name: charge?.charge_name || null,
+      charge_date: charge?.charge_date || null,
+      location: charge?.location || null,
+      car_no: e.car_no,
+      entry_name: e.entry_name,
+      captain: e.captain || null,
+      members: e.members || null,
+      class_name: e.class_name,
+      result_status: e.result_status || null,
+      raised_local: e.raised_local != null ? Number(e.raised_local) : null,
+      raised_dollars: e.raised_dollars != null ? Number(e.raised_dollars) : null,
+      categories: e.categories || null,
+      color: e.color || '#888888',
+      team_id: e.team_id,
+      team_name: e.team_name,
+      team_ref: e.team_ref || `team-${e.team_id}`,
+      car_id: e.car_id,
+      car_name: e.car_name || null,
+      make: e.make || null,
+      model: e.model || null,
+      starting_checkpoint_id: e.starting_checkpoint_id != null ? Number(e.starting_checkpoint_id) : null,
+      distances,
+      legs,
+      awards: awardsByEntry[e.entry_id] || [],
+    };
+  });
+
+  writeJson('site/_data/entries.json', entries);
+
   // ── Build GPS track GeoJSON files ─────────────────────────────────────────
   console.log('\nBuilding GPS track files...');
   for (const [chargeId, tracks] of Object.entries(tracksByCharge)) {
@@ -393,7 +468,7 @@ async function main() {
 
     const features = [];
     for (const t of tracks) {
-      const geom = parseGeoJson(t.clean_line_json);
+      const geom = parseGeoJson(t.leg_line_json);
       if (!geom) continue;
       features.push({
         type: 'Feature',
@@ -404,6 +479,13 @@ async function main() {
           team_name: t.team_name,
           result_status: t.result_status || null,
           color: t.color || '#888888',
+          leg_no: t.leg_no,
+          checkpoint1_name: t.checkpoint1_name,
+          checkpoint2_name: t.checkpoint2_name,
+          distance_m: t.leg_distance_m != null ? Number(t.leg_distance_m) : null,
+          elapsed_s: t.elapsed_s != null ? Number(t.elapsed_s) : null,
+          is_gauntlet: t.is_gauntlet,
+          is_tsetse: t.is_tsetse,
           distance_net: t.distance_net != null ? Number(t.distance_net) : null,
           distance_total_competition: t.distance_total_competition != null ? Number(t.distance_total_competition) : null,
         },
@@ -424,6 +506,7 @@ async function main() {
     const teamEntries = (entriesByTeam[t.team_id] || []).map((e) => {
       const charge = chargeRows.find((c) => c.charge_id === e.charge_id);
       return {
+        entry_id: e.entry_id,
         charge_id: e.charge_id,
         charge_ref: charge?.charge_ref || null,
         charge_name: charge?.charge_name || null,
@@ -472,6 +555,7 @@ async function main() {
     const carEntries = (entriesByCar[c.car_id] || []).map((e) => {
       const charge = chargeRows.find((ch) => ch.charge_id === e.charge_id);
       return {
+        entry_id: e.entry_id,
         charge_id: e.charge_id,
         charge_ref: charge?.charge_ref || null,
         charge_name: charge?.charge_name || null,

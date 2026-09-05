@@ -15,6 +15,14 @@ This repo holds two related projects, sharing one PostgreSQL database, that toge
 
 elephantcharge-results only *reads* from the database (via `scripts/extract.js`); all data entry, GPS import, and results/award computation happens in elephantcharge-system.
 
+## Dev servers
+
+The following are typically already running in the background during development — check before starting new ones:
+
+- elephantcharge-system backend: `http://0.0.0.0:4001`
+- elephantcharge-system frontend: `http://localhost:4000/`
+- elephantcharge-results (Eleventy serve): `http://localhost:8080/`
+
 ## Database (shared: `charge23`)
 
 - PostgreSQL 14 with **PostGIS**, database `charge23`, host `localhost`.
@@ -22,7 +30,7 @@ elephantcharge-results only *reads* from the database (via `scripts/extract.js`)
   - `elephantcharge-results/scripts/extract.js` connects as user `postgres` / password `extramild20`.
   - `elephantcharge-system/backend/src/config/config.js` connects as user `elephant_charge` / password `extramild20` (also holds the separate `teltonika` and `geotab` service credentials used by the tracker integrations).
   - The two projects deliberately use different DB users — see the permissions quirk below.
-- Full schema dump: [schema.sql](schema.sql). Human-readable reference (table row counts, views, sample data, useful queries): [db_reference.md](db_reference.md) — **read this before writing new queries**, it documents a permissions quirk (`v_award`, `v_distanceawardresults`, `v_pledgeawardresults` fail as the `postgres` user; reconstruct the join or query as `elephant_charge`).
+- Full schema dump: [schema.sql](schema.sql). Human-readable reference (table row counts, views, sample data, useful queries): [db_reference.md](db_reference.md) — **read this before writing new queries**, it documents a permissions quirk (`v_award`, `v_distanceawardresults`, `v_pledgeawardresults` used to fail as the `postgres` user because `elephant_charge` lacked SELECT on the `award` table; fixed via [scripts/fix_award_permissions.sql](scripts/fix_award_permissions.sql) — re-run it after restoring `schema.sql` onto a fresh database, since the grant isn't part of the dump).
 - 29 tables, 17 views. Core domain: `charge` (one row per annual event) → `checkpoint`/`leg` (route) → `team`/`car`/`entry` (who competed) → `gps_raw`/`gps_clean`/`gps_stop` (tracked positions) → `checkin`/`entry_leg`/`entry_distance` (computed results) → `award`/`beneficiaries`/`grant` (outcomes/fundraising).
 - A meaningful amount of business logic lives in **PostgreSQL functions**, not application code — e.g. `ec23_gpsrawsupdatecalcs`, `ec23_gpscleanscreateline`, `ec23_points_within_checkpoint`, `ec23_legdistance`, `ec23_entryleg_create_geometry` (all in `schema.sql`). These do the PostGIS geometry work (stop detection, checkpoint-crossing detection, leg distance) that the backend orchestrates. When debugging results/distance issues, check these functions, not just JS.
 - Almost all read paths go through the `v_*` views (e.g. `v_entry`, `v_charge`, `v_entry_leg`), which pre-join human-readable names and computed aggregates — prefer querying the view over the base table.
@@ -61,5 +69,5 @@ Static site generator using **Eleventy (11ty) v3** + **Nunjucks**, run once per 
   - Also computes award winners client-side in `extract.js` (`computeAwardWinners`) from raw award/entry/category/distance data rather than relying solely on the DB views.
 - `site/` — Eleventy source: `_includes/base.njk` (layout), and one directory per page type (`charge/`, `car/`, `cars/`, `team/`, `teams/`, `beneficiaries/`, plus `index.njk`). Templates read from the JSON in `site/_data/` (11ty's global data mechanism), not live from the DB.
 - `public/` — static passthrough assets (CSS, JS, logo, and the generated `data/tracks/*.geojson`) copied verbatim into `_site/`.
-- `_site/` is the build output (checked into git — treat it as generated, don't hand-edit).
+- `_site/` is the build output — gitignored (not committed); regenerate it locally with `npm run build` or `npx eleventy`, don't hand-edit it.
 - Node version pinned via `.nvmrc` (22).

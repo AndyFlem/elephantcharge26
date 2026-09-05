@@ -1,0 +1,184 @@
+---
+pagination:
+  data: entries
+  size: 1
+  alias: entry
+permalink: "/entry/{{ entry.entry_id }}/"
+layout: base.njk
+---
+
+{% set charge = charges | selectattr('charge_ref', 'equalto', entry.charge_ref) | first %}
+
+<section class="charge-header">
+  <p class="charge-meta"><a href="/charge/{{ entry.charge_ref }}/">← {{ entry.charge_name }}</a></p>
+
+  <h1>
+    <span class="team-dot" style="background:{{ entry.color }};width:18px;height:18px"></span>
+    Car {{ entry.car_no }} — {{ entry.entry_name }}
+  </h1>
+
+  <p class="charge-meta">
+    <a href="/team/{{ entry.team_ref }}/">{{ entry.team_name }}</a>
+    {% if entry.car_id %} · <a href="/car/{{ entry.car_id }}/">{{ entry.car_name or 'Car ' + entry.car_id }}</a>{% endif %}
+    {% if entry.class_name %} · {{ entry.class_name }}{% endif %}
+  </p>
+
+  {% if entry.captain %}<p class="charge-meta">Captain: {{ entry.captain }}{% if entry.members %} · {{ entry.members }}{% endif %}</p>{% endif %}
+
+  <div class="entry-overview{% if not charge.has_gps_tracks %} entry-overview--no-map{% endif %}">
+    {% if charge.has_gps_tracks %}
+    <div id="entry-map" class="entry-map"></div>
+    {% endif %}
+
+    <div class="entry-boxes">
+      <div class="stat-box">
+        <div class="stat-box-figure">
+          <span class="value">{{ entry.raised_dollars | dollars }}</span>
+        </div>
+        {% if entry.awards.length %}
+        <ul class="award-list">
+          {% for award in entry.awards %}
+          <li>🏆 {{ award.name }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+
+      <div class="stat-box">
+        <dl class="data-list">
+          <div class="data-list-row">
+            <dt>Status</dt>
+            <dd>
+              {% if entry.result_status == 'COMPLETE' %}
+              <span class="result-complete">✓ Complete</span>
+              {% elif entry.result_status %}
+              <span class="result-dnf">{{ entry.result_status }}</span>
+              {% else %}
+              <span class="muted">No result</span>
+              {% endif %}
+            </dd>
+          </div>
+          <div class="data-list-row">
+            <dt>Actual dist.</dt>
+            <dd>{{ entry.distances.TOTAL | km }}</dd>
+          </div>
+          <div class="data-list-row">
+            <dt>Competition dist.</dt>
+            <dd>{{ entry.distances.TOTAL_COMPETITION | km }}</dd>
+          </div>
+          <div class="data-list-row">
+            <dt>Net dist.</dt>
+            <dd>{{ entry.distances.NET | km }}</dd>
+          </div>
+          {% if entry.distances.GAUNTLET != null %}
+          <div class="data-list-row">
+            <dt>Gauntlet dist.</dt>
+            <dd>{{ entry.distances.GAUNTLET | km }}</dd>
+          </div>
+          {% endif %}
+          {% if entry.distances.GAUNTLET_PENALTIES != null %}
+          <div class="data-list-row">
+            <dt>Gauntlet penalties</dt>
+            <dd>{{ entry.distances.GAUNTLET_PENALTIES | km }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if entry.legs.length %}
+<section>
+  <h2>Legs</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>From</th>
+        <th>To</th>
+        <th class="hide-mobile">Check-in</th>
+        <th>Type</th>
+        <th class="hide-mobile">Time</th>
+        <th>Distance</th>
+        <th class="hide-mobile">Multiple</th>
+        <th class="hide-mobile">Speed</th>
+        <th>Position</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for leg in entry.legs %}
+      <tr>
+        <td class="car-no">{{ leg.leg_no }}</td>
+        <td class="small">{{ leg.checkpoint1_name }}</td>
+        <td class="small">{{ leg.checkpoint2_name }}</td>
+        <td class="small hide-mobile">{{ leg.end_time | time }}</td>
+        <td class="small">
+          {% if leg.is_gauntlet %}<mark>Gauntlet</mark>{% endif %}
+          {% if leg.is_tsetse %}<ins>Tsetse</ins>{% endif %}
+          {% if not leg.is_gauntlet and not leg.is_tsetse %}—{% endif %}
+        </td>
+        <td class="small hide-mobile">{{ leg.elapsed_s | duration }}</td>
+        <td class="distance">{{ leg.distance_m | km }}</td>
+        <td class="distance hide-mobile">{{ leg.distance_multiple | multiple }}</td>
+        <td class="distance hide-mobile">{{ leg.speed | speed }}</td>
+        <td class="small">{{ leg.leg_position }} of {{ leg.leg_entries }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+
+{% if charge.has_gps_tracks %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/results-map.js"></script>
+<script>
+(function () {
+  var chargeRef = {{ entry.charge_ref | json | safe }};
+  var entryId = {{ entry.entry_id | json | safe }};
+  var startCheckpointId = {{ entry.starting_checkpoint_id | json | safe }};
+  var checkpoints = {{ charge.checkpoints | json | safe }};
+  var legs = {{ charge.legs | json | safe }};
+
+  var map = L.map('entry-map');
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  ECMap.addTsetseLines(map, checkpoints, legs);
+  ECMap.addCheckpointMarkers(map, checkpoints, startCheckpointId);
+
+  fetch('/data/tracks/' + chargeRef + '.geojson')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var features = (data.features || []).filter(function (f) {
+        return f.properties.entry_id === entryId;
+      });
+
+      if (!features.length) {
+        map.setView([-15, 28.5], 11);
+        return;
+      }
+
+      var geoLayer = L.geoJSON({ type: 'FeatureCollection', features: features }, {
+        style: function (feature) {
+          return { color: feature.properties.color || '#888', weight: 3.5, opacity: 0.9 };
+        },
+        onEachFeature: function (feature, layer) {
+          layer.bindPopup(ECMap.legPopupHtml(feature.properties));
+        },
+      }).addTo(map);
+
+      map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+    })
+    .catch(function () {
+      map.setView([-15, 28.5], 11);
+    });
+})();
+</script>
+{% endif %}

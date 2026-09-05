@@ -34,6 +34,34 @@ module.exports = function (eleventyConfig) {
     });
   });
 
+  eleventyConfig.addFilter('time', (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleTimeString('en-GB', {
+      hour: '2-digit', minute: '2-digit'
+    });
+  });
+
+  eleventyConfig.addFilter('duration', (seconds) => {
+    if (seconds == null) return '—';
+    const s = Math.round(seconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return [h, m, sec].map((v) => String(v).padStart(2, '0')).join(':');
+  });
+
+  eleventyConfig.addFilter('speed', (value) => {
+    if (value == null) return '—';
+    return value.toFixed(1) + ' km/h';
+  });
+
+  eleventyConfig.addFilter('multiple', (value) => {
+    if (value == null) return '—';
+    return (value < 1 ? 1 : value).toFixed(2) + '×';
+  });
+
+  eleventyConfig.addFilter('json', (value) => JSON.stringify(value));
+
   return {
     dir: {
       input: 'site',

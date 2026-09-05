@@ -29,11 +29,14 @@ layout: base.njk
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/results-map.js"></script>
 <script>
 (function () {
   var chargeRef = '{{ charge.charge_ref }}';
   var centerLat = {{ charge.map_center.lat if charge.map_center else -15 }};
   var centerLng = {{ charge.map_center.lng if charge.map_center else 28.5 }};
+  var checkpoints = {{ charge.checkpoints | json | safe }};
+  var legs = {{ charge.legs | json | safe }};
 
   var map = L.map('map').setView([centerLat, centerLng], 11);
 
@@ -41,6 +44,9 @@ layout: base.njk
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 18,
   }).addTo(map);
+
+  ECMap.addTsetseLines(map, checkpoints, legs);
+  ECMap.addCheckpointMarkers(map, checkpoints);
 
   fetch('/data/tracks/' + chargeRef + '.geojson')
     .then(function (r) {
@@ -62,19 +68,7 @@ layout: base.njk
           };
         },
         onEachFeature: function (feature, layer) {
-          var p = feature.properties;
-          var km = p.distance_total_competition != null
-            ? (p.distance_total_competition / 1000).toFixed(1) + ' km'
-            : '—';
-          var net = p.distance_net != null
-            ? (p.distance_net / 1000).toFixed(1) + ' km net'
-            : '';
-          layer.bindPopup(
-            '<strong>Car ' + p.car_no + ' – ' + p.entry_name + '</strong><br>' +
-            (p.team_name || '') + '<br>' +
-            (p.result_status || '') + '<br>' +
-            km + (net ? ' / ' + net : '')
-          );
+          layer.bindPopup(ECMap.legPopupHtml(feature.properties));
           layer.on('mouseover', function () { layer.setStyle({ weight: 4, opacity: 1 }); });
           layer.on('mouseout',  function () { geoLayer.resetStyle(layer); });
         },
@@ -82,13 +76,17 @@ layout: base.njk
 
       map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
 
-      // Build legend
+      // Build legend (one entry per car, even though tracks have one feature per leg)
       var legendEl = document.getElementById('map-legend');
       legendEl.innerHTML = '';
+      var seen = {};
       data.features.forEach(function (f) {
         var p = f.properties;
-        var item = document.createElement('span');
+        if (seen[p.entry_id]) return;
+        seen[p.entry_id] = true;
+        var item = document.createElement('a');
         item.className = 'map-legend-item';
+        item.href = '/entry/' + p.entry_id + '/';
         item.innerHTML =
           '<span class="team-dot" style="background:' + (p.color || '#888') + '"></span>' +
           p.car_no + ' ' + p.entry_name;

@@ -64,7 +64,7 @@ PostgreSQL 14 on localhost:5432, user=postgres, db=charge23. Owner: elephant_cha
 
 ## View Details
 
-> **Note on permissions:** `v_award`, `v_distanceawardresults`, and `v_pledgeawardresults` fail when queried as the `postgres` user because the view owner (`elephant_charge`) lacks SELECT on the `award` table (owned by `postgres`). Query these by reconstructing the join directly, or grant `elephant_charge` SELECT on `award`.
+> **Note on permissions:** `v_award`, `v_distanceawardresults`, and `v_pledgeawardresults` used to fail when queried as the `postgres` user because the view owner (`elephant_charge`) lacked SELECT on the `award` table (owned by `postgres`). Fixed by running `scripts/fix_award_permissions.sql` (as a superuser), which grants `elephant_charge` SELECT on `award`. Re-apply it after restoring `schema.sql` onto a fresh database, since the grant isn't part of the dump.
 
 ---
 

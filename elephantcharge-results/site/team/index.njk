@@ -66,7 +66,7 @@ layout: base.njk
       <tr>
         <td><a href="/charge/{{ entry.charge_ref }}/">{{ entry.charge_ref }}</a></td>
         <td class="car-no">{{ entry.car_no }}</td>
-        <td>{{ entry.entry_name }}</td>
+        <td><a href="/entry/{{ entry.entry_id }}/">{{ entry.entry_name }}</a></td>
         <td class="small hide-mobile">
           {% if entry.car_id %}
           <a href="/car/{{ entry.car_id }}/">{{ entry.car_name or 'Car ' + entry.car_id }}</a>

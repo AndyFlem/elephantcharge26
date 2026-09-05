@@ -53,7 +53,7 @@ layout: base.njk
       <tr>
         <td><a href="/charge/{{ entry.charge_ref }}/">{{ entry.charge_ref }}</a></td>
         <td class="car-no">{{ entry.car_no }}</td>
-        <td>{{ entry.entry_name }}</td>
+        <td><a href="/entry/{{ entry.entry_id }}/">{{ entry.entry_name }}</a></td>
         <td class="small">
           <span class="team-dot" style="background:{{ charges | selectattr('charge_ref', 'equalto', entry.charge_ref) | first | default({}) and '#888' }}"></span>
           <a href="/team/{{ entry.team_ref }}/">{{ entry.team_name }}</a>

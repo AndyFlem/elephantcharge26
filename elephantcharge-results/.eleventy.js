@@ -1,3 +1,8 @@
+// Zambia is UTC+2 year-round (no DST). Times are stored in the DB as
+// `timestamp with time zone` and displayed in this fixed zone regardless of
+// the server's local timezone.
+const DISPLAY_TIMEZONE = 'Africa/Lusaka';
+
 module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ 'public': '.' });
 
@@ -30,14 +35,14 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addFilter('date', (dateStr) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric'
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: DISPLAY_TIMEZONE
     });
   });
 
   eleventyConfig.addFilter('time', (dateStr) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleTimeString('en-GB', {
-      hour: '2-digit', minute: '2-digit'
+      hour: '2-digit', minute: '2-digit', timeZone: DISPLAY_TIMEZONE
     });
   });
 

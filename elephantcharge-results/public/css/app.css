@@ -640,6 +640,10 @@ td.car-no   { font-weight: 700; text-align: center; width: 3rem; color: var(--ec
   opacity: 0.4;
 }
 
+.award-trophy {
+  font-size: 0.95rem;
+}
+
 .award-name {
   font-weight: 700;
   font-size: 1.05rem;

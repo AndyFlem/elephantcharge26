@@ -1,0 +1,50 @@
+---
+layout: base.njk
+title: Awards
+---
+
+<h1>Awards</h1>
+
+{% for aw in awards %}
+<div class="award-block">
+  <div class="award-block-title">
+    <span class="award-trophy">🏆</span>
+    <span class="award-name">{{ aw.name }}</span>
+  </div>
+  {% if aw.class_name or aw.category %}
+  <p class="small muted award-block-scope">
+    {% if aw.class_name %}{{ aw.class_name }}{% endif %}
+    {% if aw.class_name and aw.category %} · {% endif %}
+    {% if aw.category %}{{ aw.category }}{% endif %}
+  </p>
+  {% endif %}
+
+  {% if aw.history.length %}
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Winner</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in aw.history %}
+      <tr>
+        <td class="no-wrap"><a href="/charge/{{ h.charge_ref }}/awards/">{{ h.charge_name }}</a></td>
+        <td class="car-no">{{ h.car_no }}</td>
+        <td>
+          <span class="team-dot" style="background:{{ h.color }}"></span>
+          <a href="/entry/{{ h.entry_id }}/">{{ h.entry_name }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="small muted">No winners recorded.</p>
+  {% endif %}
+</div>
+{% endfor %}

@@ -4,6 +4,7 @@
  *
  * Outputs:
  *   site/_data/charges.json        — all charges with entries, checkpoints, legs, awards, grants
+ *   site/_data/awards.json         — one row per award, with its winner history across years
  *   site/_data/teams.json          — all teams with per-team entry history
  *   site/_data/cars.json           — all cars with per-car entry history
  *   site/_data/beneficiaries.json  — all NGOs with grants per charge
@@ -311,10 +312,13 @@ async function main() {
   const tracksByCharge = groupBy(trackRows, 'charge_id');
   const legsByEntry = groupBy(entryLegRows, 'entry_id');
   const distsByEntryFull = groupBy(entryDistanceRows, 'entry_id');
+  const entryColorById = {};
+  for (const e of entryRows) entryColorById[e.entry_id] = e.color || '#888888';
 
   // ── Build charges.json ────────────────────────────────────────────────────
   console.log('\nBuilding charges.json...');
   const awardsByEntry = {};
+  const awardsHistory = {};
   const netDistancePositionByEntry = {};
   const classDistancePositionByEntry = {};
   const charges = chargeRows.map((c) => {
@@ -382,9 +386,33 @@ async function main() {
     const awardWinners = computeAwardWinners(awardRows, cid, distanceAwardRows, pledgeAwardRows);
 
     for (const aw of awardWinners) {
-      if (!aw.winner) continue;
-      if (!awardsByEntry[aw.winner.entry_id]) awardsByEntry[aw.winner.entry_id] = [];
-      awardsByEntry[aw.winner.entry_id].push({ award_id: aw.award_id, name: aw.name });
+      if (!awardsHistory[aw.award_id]) {
+        awardsHistory[aw.award_id] = {
+          award_id: aw.award_id,
+          name: aw.name,
+          type_ref: aw.type_ref,
+          distance_ref: aw.distance_ref,
+          class_name: aw.class_name,
+          category: aw.category,
+          ordinal: aw.ordinal,
+          history: [],
+        };
+      }
+      if (aw.winner) {
+        awardsHistory[aw.award_id].history.push({
+          charge_id: cid,
+          charge_ref: c.charge_ref,
+          charge_name: c.charge_name,
+          charge_date: c.charge_date,
+          entry_id: aw.winner.entry_id,
+          car_no: aw.winner.car_no,
+          entry_name: aw.winner.entry_name,
+          color: entryColorById[aw.winner.entry_id] || '#888888',
+        });
+
+        if (!awardsByEntry[aw.winner.entry_id]) awardsByEntry[aw.winner.entry_id] = [];
+        awardsByEntry[aw.winner.entry_id].push({ award_id: aw.award_id, name: aw.name });
+      }
     }
 
     if (overallDistanceAward) {
@@ -452,6 +480,11 @@ async function main() {
   });
 
   writeJson('site/_data/charges.json', charges);
+
+  // ── Build awards.json (per-award winner history, most recent year first) ──
+  console.log('\nBuilding awards.json...');
+  const awards = Object.values(awardsHistory).sort((a, b) => a.ordinal - b.ordinal);
+  writeJson('site/_data/awards.json', awards);
 
   // ── Build entries.json (one page per entry: summary, legs, map) ───────────
   console.log('\nBuilding entries.json...');

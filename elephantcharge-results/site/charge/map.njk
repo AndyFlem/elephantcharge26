@@ -23,8 +23,8 @@ layout: base.njk
   </nav>
 </section>
 
-{% set map_image = "/charges/maps/EC" + charge.charge_ref + ".jpg" %}
-{% set kml_file = "/charges/kml/elephant_charge_" + charge.charge_ref + ".kml" %}
+{% set map_image = "/maps/maps/EC" + charge.charge_ref + ".jpg" %}
+{% set kml_file = "/maps/kml/elephant_charge_" + charge.charge_ref + ".kml" %}
 <section class="map-downloads">
   <a href="{{ map_image }}" target="_blank" rel="noopener" class="map-thumb">
     <img src="{{ map_image }}" alt="Route map — {{ charge.charge_name }}" loading="lazy">

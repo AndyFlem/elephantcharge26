@@ -7,7 +7,7 @@ permalink: "/entry/{{ entry.entry_id }}/"
 layout: base.njk
 ---
 
-{% set charge = charges | selectattr('charge_ref', 'equalto', entry.charge_ref) | first %}
+{% set charge = charges | find('charge_id', entry.charge_id) %}
 
 <section class="charge-header">
   <p class="charge-meta"><a href="/charge/{{ entry.charge_ref }}/">← {{ entry.charge_name }}</a></p>

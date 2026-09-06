@@ -62,6 +62,11 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.addFilter('json', (value) => JSON.stringify(value));
 
+  // Nunjucks' selectattr() only checks truthiness of the named attribute — it
+  // ignores any test name ('equalto') and comparison value passed to it, unlike
+  // Jinja2's selectattr. Use this instead for an actual equality lookup.
+  eleventyConfig.addFilter('find', (arr, key, value) => (arr || []).find((item) => item[key] === value) || null);
+
   eleventyConfig.addFilter('sortDesc', (arr, attribute) => {
     return [...arr].sort((a, b) => {
       const av = a[attribute];

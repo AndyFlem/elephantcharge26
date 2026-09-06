@@ -684,6 +684,7 @@ async function main() {
         team_id: e.team_id,
         team_name: e.team_name,
         team_ref: e.team_ref || `team-${e.team_id}`,
+        color: e.color || '#888888',
         result_status: e.result_status || null,
         raised_dollars: e.raised_dollars != null ? Number(e.raised_dollars) : null,
         distance_net: e.distance_net != null ? Number(e.distance_net) : null,

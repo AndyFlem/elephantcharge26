@@ -26,6 +26,7 @@
     },
     teltonikabinFile: null,
     gpxFile: null,
+    columbusFile: null,
     offsetMinutes: 0
   })
   const alerts = reactive({
@@ -36,6 +37,7 @@
   })
 
   onMounted(() => {
+    // Geotab import is deprecated and its database is often unavailable - fail silently.
     axiosPlain.get('/geotab/devices')
       .then(rows => {
         state.geotabs = rows.data
@@ -45,7 +47,7 @@
           }
         }
       })
-      .catch(err => {alert('error', 'Error', JSON.stringify(err.message))})
+      .catch(() => {state.geotabs = null})
   })
   
   watch(()=>props.dialog, newVal => {
@@ -64,7 +66,7 @@
       .then(rows => {
         state.geotab.info = rows.data
       })
-      .catch(err => {alert('error', 'Error', JSON.stringify(err.message))})
+      .catch(() => {state.geotab.info = null})
   })
 
   const geotabInfoHeaders = [
@@ -118,6 +120,17 @@
     const formData = new FormData()
     formData.append('file', state.gpxFile);
     axiosUpload.post('/entry/' + props.entry.entry_id + '/importGpx', formData)
+      .then(counts => {
+        emit('entryGpsUpdated', counts.data.count)
+        state.file=null
+        hide()
+      })
+  }
+  function columbusSelected() {
+    //state.uploadResult = ''
+    const formData = new FormData()
+    formData.append('file', state.columbusFile);
+    axiosUpload.post('/entry/' + props.entry.entry_id + '/importColumbus', formData)
       .then(counts => {
         emit('entryGpsUpdated', counts.data.count)
         state.file=null
@@ -221,6 +234,20 @@
               density="compact"
               variant="outlined"
               label="Track GPX file"
+              required
+            ></v-file-input>
+          </v-col>
+        </v-row>
+        <v-row no-gutters><v-col><v-divider/></v-col></v-row>
+        <v-row>
+          <v-col cols="12">
+            <v-file-input
+              v-model="state.columbusFile"
+              @update:model-value="columbusSelected"
+              accept=".csv"
+              density="compact"
+              variant="outlined"
+              label="Columbus CSV file"
               required
             ></v-file-input>
           </v-col>

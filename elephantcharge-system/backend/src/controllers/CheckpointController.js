@@ -73,6 +73,44 @@ module.exports = {
         res.status(500).send({ error: 'an error has occured getting the checkpoint: ' + err })
       })
   },  
+  nearbyTracks (req, res) {
+    Common.debug(req, 'nearbyTracks')
+
+    const lat = parseFloat(req.query.lat)
+    const lon = parseFloat(req.query.lon)
+    const radius_m = req.query.radius_m ? parseInt(req.query.radius_m) : 600
+
+    Knex.raw(`
+      SELECT
+        eg.entry_id,
+        e.car_no,
+        t.color,
+        ST_AsGeoJSON(
+          ST_Transform(
+            ST_Intersection(
+              ST_Transform(eg.clean_line, ${config.local_crs}),
+              ST_Buffer(ST_Transform(ST_SetSRID(ST_Point(?, ?), 4326), ${config.local_crs}), ?)
+            ),
+            4326
+          )
+        ) as line_json
+      FROM entry_geometry eg
+      INNER JOIN entry e ON e.entry_id = eg.entry_id
+      INNER JOIN team t ON t.team_id = e.team_id
+      WHERE
+        e.charge_id = ?
+        AND eg.clean_line IS NOT NULL
+        AND ST_Intersects(
+          ST_Transform(eg.clean_line, ${config.local_crs}),
+          ST_Buffer(ST_Transform(ST_SetSRID(ST_Point(?, ?), 4326), ${config.local_crs}), ?)
+        )
+    `, [lon, lat, radius_m, req.params.charge_id, lon, lat, radius_m])
+      .then(result => res.send(result.rows))
+      .catch(err => {
+        Common.error(req, 'nearbyTracks', err)
+        res.status(500).send({ error: 'an error has occured getting nearby tracks: ' + err })
+      })
+  },
   create (req, res) {
     Common.debug(req, 'create')
 

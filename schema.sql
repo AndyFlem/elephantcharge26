@@ -137,7 +137,7 @@ SELECT
 	cur.gps_clean_id,
 	CAST(EXTRACT(EPOCH FROM cur.gps_timestamp)-EXTRACT(EPOCH FROM prev.gps_timestamp) AS INTEGER) as elapsed_s,
 	ST_Distance(prev.location,cur.location, false) as dist_m,
-	0 as speed_kmh,--ST_Distance(prev.location_prj,cur.location_prj)/(EXTRACT(EPOCH FROM cur.gps_timestamp)-EXTRACT(EPOCH FROM prev.gps_timestamp))/1000*60*60 as speed_kmh,
+	ST_Distance(prev.location_prj,cur.location_prj)/(EXTRACT(EPOCH FROM cur.gps_timestamp)-EXTRACT(EPOCH FROM prev.gps_timestamp))/1000*60*60 as speed_kmh,
 	DEGREES(ST_Azimuth(prev.location_prj,cur.location_prj)) as azimuth_deg
 FROM
 	gps_clean prev
@@ -210,7 +210,7 @@ SELECT
 	cur.gps_raw_id,
 	CAST(EXTRACT(EPOCH FROM cur.gps_timestamp)-EXTRACT(EPOCH FROM prev.gps_timestamp) AS INTEGER) as elapsed_s,
 	ST_Distance(prev.location,cur.location, false) as dist_m,
-	0 as speed_kmh,--ST_Distance(prev.location_prj,cur.location_prj)/(EXTRACT(EPOCH FROM cur.gps_timestamp)-EXTRACT(EPOCH FROM prev.gps_timestamp))/1000*60*60 as speed_kmh,
+	ST_Distance(prev.location_prj,cur.location_prj)/(EXTRACT(EPOCH FROM cur.gps_timestamp)-EXTRACT(EPOCH FROM prev.gps_timestamp))/1000*60*60 as speed_kmh,
 	DEGREES(ST_Azimuth(prev.location_prj,cur.location_prj)) as azimuth_deg
 FROM
 	gps_raw prev

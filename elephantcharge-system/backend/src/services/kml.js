@@ -8,6 +8,7 @@ const EntryController = require('../controllers/EntryController')
 const ChargeCommon = require('../controllers/ChargeCommon')
 const Luxon = require('luxon')
 const DateTime = Luxon.DateTime
+const Duration = Luxon.Duration
 
 module.exports = {
    chargeKml (req, trx, chargeId, animation) {
@@ -46,7 +47,7 @@ module.exports = {
         req.query.geometry='kml'
         return Promise.all(entries.map((entry,i) => {
           if (entry.processing_status=='LEGS'){
-            return module.exports.addEntry(req, trx, entry, kmlDocument, kmlEntries, animation)
+            return module.exports.addEntry(req, trx, entry, kmlDocument, kmlEntries, animation, false)
           }
         }))
       })
@@ -98,7 +99,7 @@ module.exports = {
             .ele('open').txt('1').up()            
 
           req.query.geometry='kml'
-          return module.exports.addEntry(req, trx, entry, kmlDocument, kmlEntries, animation)
+          return module.exports.addEntry(req, trx, entry, kmlDocument, kmlEntries, animation, true)
         })
         .then(() => {
 
@@ -122,7 +123,6 @@ module.exports = {
           return {kml: kmlName}
         })
     },
-
     kmlHeader(req, trx, chargeId) {
       Common.debug(null, 'kmlHeader', chargeId)
  
@@ -147,6 +147,7 @@ module.exports = {
           kml = create({ version: '1.0' })
           .ele('kml')
             .att('xmlns', 'http://www.opengis.net/kml/2.2')
+            .att('xmlns:gx', 'http://www.google.com/kml/ext/2.2')
     
           kmlDocument = kml.ele('Document')
             .ele('name').txt(charge.charge_name).up()
@@ -172,9 +173,30 @@ module.exports = {
         })
     },
 
-    addEntry(req, trx, entry, kmlDocument, kmlEntries, animation) {
-      return EntryController.doGetLegs(req, trx, entry.entry_id)
-        .then(legs => {
+    addEntry(req, trx, entry, kmlDocument, kmlEntries, animation, includeTracks) {
+      return Promise.all([
+          EntryController.doGetLegs(req, trx, entry.entry_id),
+          includeTracks
+            ? Knex('entry_geometry')
+              .where({entry_id: entry.entry_id})
+              .select(['clean_line_kml'])
+              .transacting(trx)
+              .then(rows => rows[0] || {})
+            : {},
+          includeTracks
+            ? Knex.raw(`SELECT gps_stop_id, start_time, end_time, elapsed_s, ST_AsKML(location) AS location_kml
+              FROM gps_stop WHERE entry_id = ? ORDER BY start_time`, [entry.entry_id])
+              .transacting(trx)
+              .then(result => result.rows)
+            : [],
+          includeTracks
+            ? Knex.raw(`SELECT gps_timestamp, ST_X(ST_Transform(location_prj, 4326)) AS lon, ST_Y(ST_Transform(location_prj, 4326)) AS lat
+              FROM gps_raw WHERE entry_id = ? AND speed_kmh > 0 ORDER BY gps_timestamp`, [entry.entry_id])
+              .transacting(trx)
+              .then(result => result.rows)
+            : []
+        ])
+        .then(([legs, geometry, stops, rawPoints]) => {
           let colCode
           if (entry.color){
             colCode = entry.color.slice(5,7)+ entry.color.slice(3,5)+ entry.color.slice(1,3)
@@ -185,16 +207,28 @@ module.exports = {
             .ele('LineStyle')
               .ele('color').txt('FF' + colCode).up()
               .ele('width').txt('4').up().up()
-    
-          kmlEntry=kmlEntries.ele('Folder')
+
+          if (includeTracks) {
+            kmlDocument.ele('Style').att('id', 'entry_raw_' + entry.entry_id)
+              .ele('LineStyle')
+                .ele('color').txt('FFFFFFFF').up()
+                .ele('width').txt('1.5').up().up()
+
+            kmlDocument.ele('Style').att('id', 'entry_clean_' + entry.entry_id)
+              .ele('LineStyle')
+                .ele('color').txt('FF999999').up()
+                .ele('width').txt('1.5').up().up()
+          }
+
+          const kmlEntry = kmlEntries.ele('Folder')
             .ele('name').txt(entry.car_no + ' ' + entry.entry_name).up()
             .ele('open').txt('0').up()
 
-          kmlLegs=kmlEntry.ele('Folder')
+          const kmlLegs = kmlEntry.ele('Folder')
             .ele('name').txt('Legs').up()
             .ele('visibility').txt(animation?'0':'1').up()
             .ele('open').txt('0').up()
-          
+
           for (const leg of legs) {
             const legobj = create(leg.leg_line)
             kmlLegs.ele('Placemark')
@@ -203,12 +237,48 @@ module.exports = {
               .import(legobj)
           }
 
+          if (includeTracks && rawPoints.length) {
+            const rawTrack = kmlEntry.ele('Placemark')
+              .ele('name').txt(entry.car_no + ' Raw').up()
+              .ele('styleUrl').txt('#entry_raw_' + entry.entry_id).up()
+              .ele('gx:Track')
+
+            for (const point of rawPoints) {
+              rawTrack.ele('when').txt(DateTime.fromJSDate(point.gps_timestamp).toUTC().toISO()).up()
+            }
+            for (const point of rawPoints) {
+              rawTrack.ele('gx:coord').txt(point.lon + ' ' + point.lat + ' 0').up()
+            }
+          }
+
+          if (includeTracks && geometry.clean_line_kml) {
+            kmlEntry.ele('Placemark')
+              .ele('name').txt(entry.car_no + ' Clean').up()
+              .ele('styleUrl').txt('#entry_clean_' + entry.entry_id).up()
+              .ele('LineString')
+                .ele('coordinates').txt(geometry.clean_line_kml).up()
+          }
+
+          if (includeTracks) {
+            const kmlStops = kmlEntry.ele('Folder')
+              .ele('name').txt('Stops').up()
+              .ele('visibility').txt('0').up()
+              .ele('open').txt('0').up()
+
+            for (const stop of stops) {
+              const stopobj = create(stop.location_kml)
+              kmlStops.ele('Placemark')
+                .ele('name').txt(Duration.fromObject({seconds: stop.elapsed_s}).toFormat('hh:mm:ss')).up()
+                .import(stopobj)
+            }
+          }
+
           if (animation) {
-            kmlAnim=kmlEntry.ele('Folder')
+            const kmlAnim = kmlEntry.ele('Folder')
               .ele('name').txt('Animation').up()
               .ele('visibility').txt('0').up()
               .ele('open').txt('0').up()
-              
+
 
             return EntryController.doGetLegPoints(req, trx, entry.entry_id)
               .then(points => {

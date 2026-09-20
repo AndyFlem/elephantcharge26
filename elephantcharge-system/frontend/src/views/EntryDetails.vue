@@ -9,6 +9,7 @@
   import EntryLegs from './EntryLegs.vue'
   import MapPanel from './MapPanel.vue'
   import EntryResults from './EntryResults.vue'
+  import EntryGPSSummary from './EntryGPSSummary.vue'
   import EntryForm from './EntryForm.vue'
 
   const axiosPlain = inject('axiosPlain')
@@ -191,6 +192,7 @@
       </v-col>
       <v-col cols="12" sm="8">
         <EntryResults v-if="state.entry && state.charge" :charge="state.charge" :entry="state.entry"/>
+        <EntryGPSSummary v-if="state.entry && state.charge" :charge="state.charge" :entry="state.entry"/>
       </v-col>
     </v-row>
   </v-container>

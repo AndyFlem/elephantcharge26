@@ -35,6 +35,31 @@ function extractGPX(gpxString) {
   })
 }
 
+function extractColumbus(csvString) {
+  Common.debug(null, 'extractColumbus')
+
+  const lines = csvString.split(/\r?\n/).filter(line => line.trim().length > 0)
+  lines.shift() // header row: INDEX,TAG,DATE,TIME,LATITUDE N/S,LONGITUDE E/W,HEIGHT,SPEED,HEADING
+
+  return lines.map(line => {
+    const cols = line.split(',')
+    const date = cols[2]
+    const time = cols[3]
+    const latRaw = cols[4]
+    const lonRaw = cols[5]
+
+    const latDir = latRaw.slice(-1)
+    const lat = parseFloat(latRaw.slice(0, -1)) * (latDir === 'S' ? -1 : 1)
+
+    const lonDir = lonRaw.slice(-1)
+    const lon = parseFloat(lonRaw.slice(0, -1)) * (lonDir === 'W' ? -1 : 1)
+
+    const datetime = DateTime.fromFormat(`${date}${time}`, 'yyMMddHHmmss', { zone: 'utc' })
+
+    return { lat: lat, lon: lon, datetime: datetime }
+  })
+}
+
 module.exports = {
   // =======================
   // READ
@@ -86,7 +111,23 @@ module.exports = {
       Common.error(req, 'showGeometry', err)
       res.status(500).send({ error: 'An error has occured trying fetch the entry: ' + err })
     })
-  },   
+  },
+  gpsSummary (req, res) {
+    Common.debug(req, 'gpsSummary')
+
+    Knex('gps_clean')
+      .where({entry_id: req.params.entry_id})
+      .min({cleans_from: 'gps_timestamp'})
+      .max({cleans_to: 'gps_timestamp'})
+      .first()
+      .then(cleanRange => {
+        res.send(cleanRange)
+      })
+      .catch(err => {
+        Common.error(req, 'gpsSummary', err)
+        res.status(500).send({ error: 'An error has occured trying fetch the gps summary for the entry: ' + err })
+      })
+  },
   entriesForCharge (req, trx, chargeId) {
     Common.debug(req, 'entriesForCharge', 'ChargeId: ' + chargeId )
 
@@ -179,7 +220,7 @@ module.exports = {
       Common.error(req, 'kml', err)
       res.status(500).send({ error: 'An error has occured trying fetch the kml for the entry: ' + err })
     })
-  },  
+  },
   doGetLegs (req, trx, entryId) {
     Common.debug(req, 'doGetLegs')
     
@@ -481,14 +522,14 @@ module.exports = {
           let gpx = req.files.file.data.toString('utf8')
           unfiltered = extractGPX(gpx)
           let rows = unfiltered.filter(v=>v.datetime.diff(DateTime.fromISO(charge.charge_date),'days').days<1)
-          return GPSCommon.importRaw(req, trx, entry_id, rows, 0, 0)
+          return GPSCommon.importRaw(req, trx, entry_id, rows, 0, 0, 'SMOOTHED')
         })
         .then(cnts => {
           counts = cnts
 
           return Knex('entry')
             .update({
-              processing_status: counts.clean_count > 0 ? 'CLEAN':'NO_GPS', 
+              processing_status: counts.clean_count > 0 ? 'CLEAN':'NO_GPS',
               gps_source_ref: counts.clean_count > 0 ? 'GPX' : null,
               geotab_device_id: null
             })
@@ -510,6 +551,66 @@ module.exports = {
       .catch(err => {
         Common.error(req, 'importGpx', err)
         res.status(500).send({ error: 'an error has occured importing the raw gps data: ' + err })
+      })
+
+  },
+  importColumbus (req, res) {
+    Common.debug(req, 'importColumbus')
+
+    const entry_id = req.params.entry_id
+
+    let counts
+    let entry
+    let charge
+    let unfiltered
+
+    if (!req.files) {
+      return res.status(400).send("No files were uploaded.");
+    }
+
+    return Knex.transaction(function (trx) {
+      module.exports.getEntry(req, trx, entry_id)
+        .then(ent => {
+          entry = ent
+          return ChargeCommon.getChargeById(req, trx, entry.charge_id)
+        })
+        .then(chrg => {
+          charge = chrg
+          return module.exports.doClearResult(req, trx, entry_id)
+        })
+        .then(() => {
+          let csv = req.files.file.data.toString('utf8')
+          unfiltered = extractColumbus(csv)
+          let rows = unfiltered.filter(v=>v.datetime.diff(DateTime.fromISO(charge.charge_date),'days').days<1)
+          return GPSCommon.importRaw(req, trx, entry_id, rows, 0, 0, 'SMOOTHED')
+        })
+        .then(cnts => {
+          counts = cnts
+
+          return Knex('entry')
+            .update({
+              processing_status: counts.clean_count > 0 ? 'CLEAN':'NO_GPS',
+              gps_source_ref: counts.clean_count > 0 ? 'COLUMBUS' : null,
+              geotab_device_id: null
+            })
+            .where({entry_id: entry_id})
+            .transacting(trx)
+        })
+        .then(() => {
+          if (counts.clean_count > 0 ) {
+            return module.exports.doCalculateCheckins(req, trx, entry_id)
+          }
+        })
+        .then(trx.commit)
+        .catch(trx.rollback)
+      })
+      .then(() => {
+        Common.debug(null, 'importColumbus', JSON.stringify(counts))
+        res.send(counts)
+      })
+      .catch(err => {
+        Common.error(req, 'importColumbus', err)
+        res.status(500).send({ error: 'an error has occured importing the columbus gps data: ' + err })
       })
 
   },

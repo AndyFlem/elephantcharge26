@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+  <Document>
+    <name>Elephant Charge 2026</name>
+    <Style id="cab">
+      <IconStyle>
+        <scale>0.7</scale>
+        <href>http://maps.google.com/mapfiles/kml/shapes/cabs.png</href>
+      </IconStyle>
+    </Style>
+    <Folder>
+      <name>Checkpoints</name>
+      <open>0</open>
+      <Placemark>
+        <name>Pilatus</name>
+        <Point>
+          <coordinates>29.0379494616533,-15.0949527417379</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Leopards Hill Memorial Park</name>
+        <Point>
+          <coordinates>29.024866285,-15.090353237</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>National Milling</name>
+        <Point>
+          <coordinates>29.027554426,-15.090383398</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Country Choice Chicken</name>
+        <Point>
+          <coordinates>29.010276580547,-15.0748323363218</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>UAG</name>
+        <Point>
+          <coordinates>29.0356635517678,-15.1137053153041</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Be Forward</name>
+        <Point>
+          <coordinates>29.0596852284786,-15.099798131491</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Sunsweet</name>
+        <Point>
+          <coordinates>29.028466993,-15.08854087</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Time Projects</name>
+        <Point>
+          <coordinates>29.0522058912636,-15.0870528837415</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Lusaka Commercial Cold Storage</name>
+        <Point>
+          <coordinates>29.0416517174584,-15.0657867701245</coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Bonaventure</name>
+        <Point>
+          <coordinates>29.0356276002342,-15.0816271772634</coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Entries</name>
+      <open>1</open>
+    </Folder>
+  </Document>
+</kml>

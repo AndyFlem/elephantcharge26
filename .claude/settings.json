@@ -8,7 +8,13 @@
       "Bash(psql *)",
       "Bash(PGPASSWORD=extramild20 psql *)",
       "Bash(pg_dump *)",
-      "Bash(PGPASSWORD=extramild20 pg_dump *)"
+      "Bash(PGPASSWORD=extramild20 pg_dump *)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(npx playwright screenshot *)",
+      "Bash(npx eleventy *)",
+      "Bash(npx @11ty/eleventy *)",
+      "Bash(npm run extract)",
+      "Bash(npm run build)"
     ]
   }
 }

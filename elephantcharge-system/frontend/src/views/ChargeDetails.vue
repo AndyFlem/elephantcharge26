@@ -10,14 +10,16 @@
   import ChargeGrants from './ChargeGrants.vue'
   
   const axiosPlain = inject('axiosPlain')
+  const axiosStatic = inject('axiosStatic')
   const route = useRoute()
   const router = useRouter()
 
   const state = reactive({
     chargeId: null,
-    charge: null
+    charge: null,
+    downloadingKml: false
   })
-  
+
   const chargeFormShow = ref(false)
 
   watch(
@@ -41,6 +43,24 @@
         router.push({name: 'Charges'})
       })
       .catch(err => {alert('error', 'Error', JSON.stringify(err.message))})
+  }
+
+  function downloadKml() {
+    state.downloadingKml = true
+    return axiosPlain.get('/charge/' + state.charge.charge_id + '/kml')
+      .then(result => {
+        return axiosStatic.get('/charges/kml/' + result.data.kml, { responseType: 'blob' })
+          .then(response => {
+            const blob = new Blob([response.data], { type: 'application/vnd.google-earth.kml+xml' })
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = result.data.kml.split('/').pop()
+            link.click()
+            URL.revokeObjectURL(link.href)
+          })
+      })
+      .catch(err => {alert('error', 'Error generating the kml', JSON.stringify(err.message))})
+      .finally(() => { state.downloadingKml = false })
   }
 
 </script>
@@ -70,14 +90,17 @@
                       <v-btn prepend-icon="mdi-book" density="compact" variant="text" @click="router.push({ name: 'Charge Entries', params: { charge_id: state.charge.charge_id } })">Entries</v-btn>
                   </v-list-item>                     
                   <v-list-item>
-                    <a :href="`/charge/${state.charge.charge_id}/results`">Charge Results</a>
-                  </v-list-item>  
+                      <v-btn prepend-icon="mdi-flag-checkered" density="compact" variant="text" :href="`/charge/${state.charge.charge_id}/results`">Charge Results</v-btn>
+                  </v-list-item>
                   <v-list-item>
-                    <a :href="`/charge/${state.charge.charge_id}/entries_results`">Charge Entry Results</a>
-                  </v-list-item>  
+                      <v-btn prepend-icon="mdi-format-list-bulleted" density="compact" variant="text" :href="`/charge/${state.charge.charge_id}/entries_results`">Charge Entry Results</v-btn>
+                  </v-list-item>
                   <v-list-item>
-                    <a :href="`/charge/${state.charge.charge_id}/legs_results`">Charge Leg Results</a>
-                  </v-list-item>                                 
+                      <v-btn prepend-icon="mdi-map-marker-distance" density="compact" variant="text" :href="`/charge/${state.charge.charge_id}/legs_results`">Charge Leg Results</v-btn>
+                  </v-list-item>
+                  <v-list-item>
+                      <v-btn prepend-icon="mdi-earth" density="compact" variant="text" :loading="state.downloadingKml" @click="downloadKml">Download Kml</v-btn>
+                  </v-list-item>
 
                 </v-list>
               </v-menu>              

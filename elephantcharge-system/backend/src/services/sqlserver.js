@@ -30,7 +30,8 @@ function exec(sql) {
 
   return new Promise((resolve, reject) => {
     if (!connection) {
-      reject()
+      reject(new Error('No SQL Server connection available'))
+      return
     }
     let columns
     const rows=[]

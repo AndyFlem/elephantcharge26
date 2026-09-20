@@ -39,6 +39,7 @@ module.exports = (app) => {
 
   app.get(prefix + '/entry/:entry_id', EntryController.show)
   app.get(prefix + '/entry/:entry_id/geometry', EntryController.showGeometry)
+  app.get(prefix + '/entry/:entry_id/gps_summary', EntryController.gpsSummary)
 
   app.post(prefix + '/entry', EntryController.create)
   app.put(prefix + '/entry/:entry_id', EntryController.update)
@@ -59,15 +60,17 @@ module.exports = (app) => {
   app.post(prefix + '/entry/:entry_id/importTeltonikaDB', EntryController.importTeltonikaDB)
   app.post(prefix + '/entry/:entry_id/importGeotab', EntryController.importGeotab)
   app.post(prefix + '/entry/:entry_id/importGpx', EntryController.importGpx)
+  app.post(prefix + '/entry/:entry_id/importColumbus', EntryController.importColumbus)
   app.post(prefix + '/entry/:entry_id/importTeltonikaBin', EntryController.importTeltonikaBin)
   app.get(prefix + '/entry/:entry_id/kml', EntryController.kml)
-  
+
   app.get(prefix + '/leg/:leg_id/entries', EntryController.indexForLeg)
 
   app.get(prefix + '/classes', EntryController.indexClasses)
   app.get(prefix + '/categories', EntryController.indexCategories)
   
   app.get(prefix + '/charge/:charge_id/checkpoints', CheckpointController.index)
+  app.get(prefix + '/charge/:charge_id/nearbyTracks', CheckpointController.nearbyTracks)
   app.get(prefix + '/checkpoint/:checkpoint_id', CheckpointController.show)
   app.post(prefix + '/checkpoint', CheckpointController.create)
   app.put(prefix + '/checkpoint/:checkpoint_id', CheckpointController.update)

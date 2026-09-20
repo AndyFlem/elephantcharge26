@@ -5,11 +5,12 @@ const Common = require('./CommonDebug')('GPSCommon')
 const config = require('../config/config')
 
 module.exports = {
-  async importRaw(req, trx, entry_id, rows, offsetDays, offsetMinutes) {
+  async importRaw(req, trx, entry_id, rows, offsetDays, offsetMinutes, sourceKind = 'RAW') {
     let cleans_count = 0
     let stops
+    let chargeDate
 
-    Common.debug(null, 'importRaw')
+    Common.debug(null, 'importRaw', sourceKind)
 
     for await (const row of rows) {
       Knex.raw(`INSERT INTO gps_raw (entry_id, gps_timestamp, location, location_prj) 
@@ -34,6 +35,19 @@ module.exports = {
           .transacting(trx)
       })
       .then(() => {
+        return Knex('entry')
+          .where({entry_id: entry_id})
+          .select(['charge_id'])
+          .transacting(trx)
+      })
+      .then(entries => {
+        return Knex('charge')
+          .where({charge_id: entries[0].charge_id})
+          .select(['charge_date'])
+          .transacting(trx)
+      })
+      .then(charges => {
+        chargeDate = DateTime.fromISO(charges[0].charge_date).toISODate()
         return Knex('v_gps_raw')
           .where({entry_id: entry_id})
           .orderBy('gps_timestamp')
@@ -41,8 +55,12 @@ module.exports = {
           .transacting(trx)
       })
       .then(async rws => {
-        raws = rws
-        stops = findStops(req, trx, raws)
+        // gps_raw can hold points from outside the event day (e.g. a logger left
+        // running overnight before/after the drive) - only points that fall on
+        // the charge's own date are used to build gps_clean/gps_stop, so results
+        // can't be skewed by pre/post-event idle time or stray fixes.
+        raws = rws.filter(r => DateTime.fromJSDate(r.gps_timestamp).toISODate() === chargeDate)
+        stops = sourceKind === 'SMOOTHED' ? findStopsSmoothed(req, trx, raws) : findStops(req, trx, raws)
     
         let stop_i = 0
         let inserts = []
@@ -246,4 +264,125 @@ function amalgamateStops(stops) {
 
 function distance(pnt1, pnt2){
   return Math.sqrt(Math.pow(pnt1.x - pnt2.x, 2) + Math.pow(pnt1.y - pnt2.y, 2))
+}
+
+// --- Stop detection for pre-smoothed sources (GPX / Columbus) ---
+//
+// findStops() above assumes a roughly fixed ~6s Geotab sample interval and uses a
+// point-count threshold (min_stop_points) as a proxy for stop duration, anchoring each
+// candidate stop window to its first point. GPX/Columbus data is already smoothed on
+// the device but sampled at very different, often non-uniform rates (Columbus ~1s fixed,
+// GPX anywhere from ~7s to ~30s depending on the device), so a point-count threshold
+// stops meaning a fixed duration and ordinary few-metre GPS jitter around a stationary
+// vehicle repeatedly breaks the anchor-distance check, fragmenting one real stop into a
+// chain of many tiny ones. This variant uses a wall-clock duration threshold, clusters
+// around a running centroid instead of a fixed anchor, tolerates a single noisy point
+// without closing the window (debounce), and amalgamates nearby-in-time/nearby-in-space
+// windows afterwards so a stop interrupted by stray jitter points is recombined.
+const SMOOTHED_STOP_PARAMS = {
+  stop_radius: 10,        // meters - candidate points must be within this of the running centroid
+  min_stop_duration_s: 60,  // seconds - minimum wall-clock dwell time to count as a stop
+  max_misses: 1,          // consecutive out-of-radius points tolerated before closing the window
+  max_miss_distance: 30,  // meters - beyond this a point is a real departure, not jitter, even within max_misses
+  amalgamate_gap_s: 30     // seconds - merge two stop windows this close in time (and within stop_radius) into one
+}
+
+function findStopsSmoothed(req, trx, raws) {
+  Common.debug(null, 'findStopsSmoothed')
+
+  const params = SMOOTHED_STOP_PARAMS
+  const n = raws.length
+  let stops = []
+  let i = 0
+
+  while (i < n) {
+    // Membership is tested against a fixed anchor (this window's first point),
+    // not a running centroid: a running centroid re-centers on every accepted
+    // point, which lets a cluster drift an unbounded distance over a long dwell
+    // (observed up to ~24m of true wander over 30-60+ minute stops in practice)
+    // while each single step still looks like it's within stop_radius. That
+    // silently collapses real path shape near stops and produces spikes when an
+    // outlier briefly pulls the centroid off to one side. Anchoring to a fixed
+    // point bounds every stop to stop_radius of where it started, same as the
+    // RAW/Geotab algorithm above; the averaged centroid is still reported as the
+    // stop's location for stability, it's just not used for the membership test.
+    const anchor = raws[i]
+    let sum_x = anchor.x
+    let sum_y = anchor.y
+    let count = 1
+    let last_good_index = i
+    let misses = 0
+    let j = i + 1
+
+    while (j < n) {
+      const d = distance(anchor, raws[j])
+      if (d <= params.stop_radius) {
+        sum_x += raws[j].x
+        sum_y += raws[j].y
+        count += 1
+        last_good_index = j
+        misses = 0
+        j += 1
+      } else if (misses < params.max_misses && d <= params.max_miss_distance) {
+        // tolerate a single noisy point without breaking the window; it is not
+        // added to the cluster/centroid, just skipped over
+        misses += 1
+        j += 1
+      } else {
+        break
+      }
+    }
+
+    const duration_s = elapsedSeconds(raws[i].gps_timestamp, raws[last_good_index].gps_timestamp)
+    if (last_good_index > i && duration_s >= params.min_stop_duration_s) {
+      stops.push({
+        from_index: i,
+        to_index: last_good_index,
+        x: sum_x / count,
+        y: sum_y / count
+      })
+      i = last_good_index + 1
+    } else {
+      i += 1
+    }
+  }
+
+  stops = amalgamateStopsSmoothed(stops, raws, params)
+  Common.debug(null, 'findStopsSmoothed', stops.length)
+  return stops
+}
+
+function amalgamateStopsSmoothed(stops, raws, params) {
+  Common.debug(null, 'amalgamateStopsSmoothed')
+
+  if (stops.length === 0) return stops
+
+  let combined = [stops[0]]
+
+  for (let k = 1; k < stops.length; k++) {
+    const prev = combined[combined.length - 1]
+    const cur = stops[k]
+    const gap_s = elapsedSeconds(raws[prev.to_index].gps_timestamp, raws[cur.from_index].gps_timestamp)
+    const centroid_dist = distance(prev, cur)
+
+    if (gap_s <= params.amalgamate_gap_s && centroid_dist <= params.stop_radius) {
+      const prev_count = prev.to_index - prev.from_index + 1
+      const cur_count = cur.to_index - cur.from_index + 1
+      const total_count = prev_count + cur_count
+      combined[combined.length - 1] = {
+        from_index: prev.from_index,
+        to_index: cur.to_index,
+        x: (prev.x * prev_count + cur.x * cur_count) / total_count,
+        y: (prev.y * prev_count + cur.y * cur_count) / total_count
+      }
+    } else {
+      combined.push(cur)
+    }
+  }
+
+  return combined
+}
+
+function elapsedSeconds(t1, t2) {
+  return (new Date(t2).getTime() - new Date(t1).getTime()) / 1000
 }

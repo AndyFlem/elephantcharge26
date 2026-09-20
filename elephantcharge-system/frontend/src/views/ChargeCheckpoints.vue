@@ -1,7 +1,7 @@
 <script setup>
   import { reactive, inject, watch } from 'vue'
   import { format } from 'd3'
-  
+
   import CheckpointForm from './CheckpointForm.vue'
   import CheckpointUploadForm from './CheckpointUploadForm.vue'
   import MapPanel from './MapPanel.vue'
@@ -20,7 +20,7 @@
   watch(()=>props.charge, () => {
     reload()
   }, { immediate: true })
-  
+
   function reload() {
     axiosPlain.get('/charge/' + props.charge.charge_id + '/checkpoints')
         .then(rows => {
@@ -36,7 +36,7 @@
     {title: '', align: 'center', sortable: true, key: 'index'},
     {title: 'Checkpoint', align: 'start', sortable: true, key: 'sponsor_name'},
     {title: 'Gauntlet', align: 'center', sortable: true, key: 'is_gauntlet'},
-    //{title: 'Radius', align: 'start', sortable: true, key: 'radius_m'},
+    {title: 'Radius', align: 'start', sortable: true, key: 'radius_m'},
     {title: 'Starters', align: 'center', sortable: true, key: 'starters_count', formatter: formatCount},
     {title: 'Checkins', align: 'center', sortable: true, key: 'checkins_count', formatter: formatCount},
     {title: 'Actions', align: 'center', sortable: true, key: 'actions'}
@@ -63,7 +63,7 @@
     let item = state.checkpoints[state.checkpoints.map(v=>v.checkpoint_id).indexOf(checkpoint.checkpoint_id)]
     item.sponsor_name = sponsor.sponsor_name
     item.short_name = sponsor.short_name
-    
+
   }
 </script>
 
@@ -79,12 +79,12 @@
         class="elevation-1"
         density="compact"
       >
-        <template 
-          v-for="heder in checkpointTableHeaders.filter((h) => (h.hasOwnProperty('formatter')))" 
+        <template
+          v-for="heder in checkpointTableHeaders.filter((h) => (h.hasOwnProperty('formatter')))"
           v-slot:[`item.${heder.key}`]="{ value }"
         >
             {{ heder.hasOwnProperty('formatter') ? heder.formatter(value) : value}}
-        </template> 
+        </template>
         <template v-slot:[`item.index`]="{ index }">
           {{ index+1 }}
         </template>
@@ -97,7 +97,7 @@
               <v-btn size="x-small" variant="flat" @click="activate" icon="mdi-pencil"></v-btn>
             </template>
           </SponsorForm>
-          {{ item.sponsor_name }}   
+          {{ item.sponsor_name }}
         </template>
         <template v-slot:item.actions="{ item }">
           <CheckpointForm :charge-id="props.charge.charge_id" :checkpoint-id="item.checkpoint_id" @checkpoint-updated="checkpointUpdated">
@@ -106,7 +106,7 @@
             </template>
           </CheckpointForm>
           <v-btn title="Delete checkpoint" v-if="item.checkins_count == '0'" size="x-small" variant="flat" @click="deleteCheckpoint(item)" icon="mdi-delete"></v-btn>
-        </template>       
+        </template>
         <template #bottom>
           <v-row class="mt-2 mb-2 mr-2">
             <v-col cols="12" class="d-flex">
@@ -115,7 +115,7 @@
                 <template #activator="{ activate }">
                   <v-btn color="primary" class="mr-2" variant="flat" @click="activate">Upload Checkpoints KMZ</v-btn>
                 </template>
-              </CheckpointUploadForm>       
+              </CheckpointUploadForm>
               <CheckpointForm :charge-id="props.charge.charge_id" @checkpoint-created="checkpointCreated">
                 <template #activator="{ activate }">
                   <v-btn color="primary" variant="flat" @click="activate">Add Checkpoint</v-btn>
@@ -123,7 +123,7 @@
               </CheckpointForm>
             </v-col>
           </v-row>
-        </template>      
+        </template>
       </v-data-table>
     </v-col>
     <v-col cols="12" sm="4">

@@ -1018,10 +1018,13 @@ module.exports = {
       })
       .then(legs => {
         Common.debug(null, 'doUpdateDistances', 'Got legs:' + legs.length)
+        let touchedGauntletCheckpoints = new Set()
         for (const leg of legs) {
           distances.TOTAL += leg.distance_m
           if (leg.is_gauntlet) {
             distances.GAUNTLET += leg.distance_m
+            touchedGauntletCheckpoints.add(leg.checkpoint1_id)
+            touchedGauntletCheckpoints.add(leg.checkpoint2_id)
           } else {
             distances.NON_GAUNTLET += leg.distance_m
           }
@@ -1033,27 +1036,45 @@ module.exports = {
           }
         }
 
-        distances.GAUNTLET_PENALTIES = entry.dist_penalty_gauntlet
-        distances.PENALTIES = entry.dist_penalty_nongauntlet
+        // The `leg` table pre-generates a row for every combination of gauntlet
+        // checkpoints (e.g. 3 rows for 3 checkpoints), not just the legs actually
+        // driven through the gauntlet, so completion is judged by how many of the
+        // charge's gauntlet checkpoints the entry actually visited.
+        return Knex('checkpoint')
+          .where({charge_id: charge.charge_id, is_gauntlet: true})
+          .count('* as count')
+          .transacting(trx)
+          .then(rows => {
+            const totalGauntletCheckpoints = parseInt(rows[0].count)
+            const gauntletComplete = totalGauntletCheckpoints === 0 || touchedGauntletCheckpoints.size >= totalGauntletCheckpoints
 
-        distances.GAUNTLET_COMPETITION = charge.gauntlet_multiplier * (distances.GAUNTLET + distances.GAUNTLET_PENALTIES)
-        distances.TOTAL_COMPETITION = distances.GAUNTLET_COMPETITION + distances.PENALTIES + distances.NON_GAUNTLET
-        
-        if (entry.result_status == 'COMPLETE') {
-          distances.NET = distances.TOTAL_COMPETITION - (charge.m_per_local * entry.raised_local)
-        }
+            if (!gauntletComplete) {
+              Common.debug(null, 'doUpdateDistances', `Gauntlet incomplete: ${touchedGauntletCheckpoints.size}/${totalGauntletCheckpoints} checkpoints visited, no gauntlet result awarded`)
+              distances.GAUNTLET = 0
+            }
 
-        let distInserts = Object.keys(distances).filter(distKey=>distances[distKey]).map(distKey=>{ 
-          return Knex('entry_distance')
-            .insert({
-              'entry_id': entryId,
-              'distance_ref': distKey,
-              'distance_m': Math.floor(distances[distKey])
+            distances.GAUNTLET_PENALTIES = gauntletComplete ? entry.dist_penalty_gauntlet : 0
+            distances.PENALTIES = entry.dist_penalty_nongauntlet
+
+            distances.GAUNTLET_COMPETITION = charge.gauntlet_multiplier * (distances.GAUNTLET + distances.GAUNTLET_PENALTIES)
+            distances.TOTAL_COMPETITION = distances.GAUNTLET_COMPETITION + distances.PENALTIES + distances.NON_GAUNTLET
+
+            if (entry.result_status == 'COMPLETE') {
+              distances.NET = distances.TOTAL_COMPETITION - (charge.m_per_local * entry.raised_local)
+            }
+
+            let distInserts = Object.keys(distances).filter(distKey=>distances[distKey]).map(distKey=>{
+              return Knex('entry_distance')
+                .insert({
+                  'entry_id': entryId,
+                  'distance_ref': distKey,
+                  'distance_m': Math.floor(distances[distKey])
+                })
+                .transacting(trx)
             })
-            .transacting(trx)
-        })
-        Common.debug(null, 'doUpdateDistances', 'Updating distances')
-        return Promise.all(distInserts)
+            Common.debug(null, 'doUpdateDistances', 'Updating distances')
+            return Promise.all(distInserts)
+          })
       })
       .then(() => {
         return distances

@@ -4,6 +4,14 @@
 const DISPLAY_TIMEZONE = 'Africa/Lusaka';
 
 module.exports = function (eleventyConfig) {
+  // The dev server always binds to 0.0.0.0, but only prints the localhost URL;
+  // showAllHosts also lists the LAN/WSL addresses so the preview can be opened
+  // from the Windows host or another machine.
+  eleventyConfig.setServerOptions({
+    port: 8080,
+    showAllHosts: true,
+  });
+
   eleventyConfig.addPassthroughCopy({ 'public': '.' });
 
   eleventyConfig.addFilter('km', (metres) => {

@@ -53,7 +53,7 @@ module.exports = {
   carNosAvailable(req, res) {
     Common.debug(req, 'entryNosAvailable')
 
-    Knex.raw('SELECT car_no FROM generate_series(1, 99) car_no where car_no not in (SELECT e.car_no from entry e inner join charge c on e.charge_id=c.charge_id where c.charge_id=?)', [req.params.charge_id])
+    Knex.raw('SELECT car_no FROM generate_series(1, 110) car_no where car_no not in (SELECT e.car_no from entry e inner join charge c on e.charge_id=c.charge_id where c.charge_id=?)', [req.params.charge_id])
       .then(carNos => res.send(carNos.rows))
       .catch(err => {
         Common.error(req, 'carNosAvailable', err)

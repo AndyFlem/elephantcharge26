@@ -21,7 +21,7 @@ The following are typically already running in the background during development
 
 - elephantcharge-system backend: `http://0.0.0.0:4001`
 - elephantcharge-system frontend: `http://localhost:4000/`
-- elephantcharge-results (Eleventy serve): `http://localhost:8080/`
+- elephantcharge-results (Eleventy serve): `http://0.0.0.0:8080/` (binds all interfaces; `.eleventy.js` sets `showAllHosts` so the LAN/WSL address is printed alongside localhost)
 
 ## Database (shared: `charge23`)
 

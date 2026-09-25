@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="cps_wgs84" id="cps_wgs84">
+	<SimpleField name="Arc50_mE" type="float"></SimpleField>
+	<SimpleField name="Arc50_mN" type="float"></SimpleField>
+</Schema>
+<Folder><name>cps_wgs84</name>
+  <Placemark id="cps_wgs84.1">
+	<name>UAG</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">718790</SimpleData>
+		<SimpleData name="Arc50_mN">8328385</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0356635517678,-15.1137053153041,1304.925293</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.2">
+	<name>Sunsweet</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">718040</SimpleData>
+		<SimpleData name="Arc50_mN">8331175</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0284669927977,-15.088540870471,1006.100525</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.3">
+	<name>Country Choice</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">716100</SimpleData>
+		<SimpleData name="Arc50_mN">8332710</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.010276580547,-15.0748323363218,1100.494629</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.4">
+	<name>LCCS</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">719480</SimpleData>
+		<SimpleData name="Arc50_mN">8333680</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0416517174584,-15.0657867701245,1096.992188</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.5">
+	<name>Bonaventure</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">718815</SimpleData>
+		<SimpleData name="Arc50_mN">8331935</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0356276002342,-15.0816271772634,1048.674561</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.6">
+	<name>Time Projects</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">720595</SimpleData>
+		<SimpleData name="Arc50_mN">8331315</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0522058912636,-15.0870528837415,1014.508728</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.7">
+	<name>Pilatus</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">719055</SimpleData>
+		<SimpleData name="Arc50_mN">8330455</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0379494616533,-15.0949527417379,964.75</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.8">
+	<name>Be Forward</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">721385</SimpleData>
+		<SimpleData name="Arc50_mN">8329900</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0596852284786,-15.099798131491,1047.62207</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.9">
+	<name>LHMP</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">717650</SimpleData>
+		<SimpleData name="Arc50_mN">8330980</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0248662850732,-15.0903532368232,1002.918762</coordinates></Point>
+  </Placemark>
+  <Placemark id="cps_wgs84.10">
+	<name>National Milling</name>
+	<ExtendedData><SchemaData schemaUrl="#cps_wgs84">
+		<SimpleData name="Arc50_mE">717940</SimpleData>
+		<SimpleData name="Arc50_mN">8330975</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>29.0275544257955,-15.0903833983012,1003.339966</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
